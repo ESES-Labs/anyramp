@@ -1,8 +1,24 @@
 import { useEffect, useRef, type ComponentType } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ShieldCheck, Sparkles, Zap, ArrowRight, Lock, Globe2 } from "lucide-react";
+import {
+  ShieldCheck,
+  Sparkles,
+  Zap,
+  ArrowRight,
+  Lock,
+  Globe2,
+  Wallet,
+  Landmark,
+  Smartphone,
+  Building2,
+  CircleDollarSign,
+  CheckCircle2,
+} from "lucide-react";
 import { DotPattern } from "@/components/dot-pattern";
 import { AnyrampLogo } from "@/components/anyramp-logo";
+import { AnimatedBeams, BeamNode } from "@/components/animated-beam";
+import { Marquee } from "@/components/marquee";
+import { StellarIcon } from "@/components/stellar-icon";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -27,7 +43,7 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Lenis smooth scroll (client-only, scoped to this page lifetime)
+  // Lenis smooth scroll
   useEffect(() => {
     let cancelled = false;
     let raf = 0;
@@ -57,7 +73,7 @@ function Landing() {
     };
   }, []);
 
-  // GSAP scroll-reveal for [data-reveal] elements
+  // GSAP scroll-reveal
   useEffect(() => {
     let ctx: { revert: () => void } | null = null;
     (async () => {
@@ -69,31 +85,33 @@ function Landing() {
         gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
           gsap.from(el, {
             opacity: 0,
-            y: 40,
+            y: 36,
             duration: 0.9,
             ease: "power3.out",
             scrollTrigger: {
               trigger: el,
-              start: "top 85%",
+              start: "top 88%",
               toggleActions: "play none none reverse",
             },
           });
         });
 
-        gsap.utils.toArray<HTMLElement>("[data-reveal-stagger] > *").forEach((el, i) => {
-          gsap.from(el, {
-            opacity: 0,
-            y: 28,
-            duration: 0.7,
-            delay: i * 0.08,
-            ease: "power2.out",
-            scrollTrigger: {
-              trigger: el,
-              start: "top 90%",
-              toggleActions: "play none none reverse",
-            },
-          });
-        });
+        gsap.utils.toArray<HTMLElement>("[data-reveal-stagger] > *").forEach(
+          (el, i) => {
+            gsap.from(el, {
+              opacity: 0,
+              y: 24,
+              duration: 0.7,
+              delay: i * 0.07,
+              ease: "power2.out",
+              scrollTrigger: {
+                trigger: el,
+                start: "top 90%",
+                toggleActions: "play none none reverse",
+              },
+            });
+          }
+        );
       }, rootRef);
     })();
     return () => ctx?.revert();
@@ -108,10 +126,15 @@ function Landing() {
       <header className="fixed inset-x-0 top-0 z-50 flex items-center justify-between border-b border-black/[0.04] bg-background/70 px-5 py-3.5 backdrop-blur-xl">
         <Link to="/" className="flex items-center gap-2">
           <span className="grid size-7 place-items-center rounded-full bg-foreground">
-            <span className="size-2.5 rotate-45 rounded-[2px] bg-background" />
+            <StellarIcon className="size-3.5 text-background" />
           </span>
           <span className="font-serif text-lg tracking-tight">Anyramp</span>
         </Link>
+        <nav className="hidden items-center gap-7 text-sm text-muted-foreground sm:flex">
+          <a href="#how" className="transition-colors hover:text-foreground">How</a>
+          <a href="#flow" className="transition-colors hover:text-foreground">Flow</a>
+          <a href="#partners" className="transition-colors hover:text-foreground">Ecosystem</a>
+        </nav>
         <a
           href="/app"
           target="_blank"
@@ -124,8 +147,7 @@ function Landing() {
       </header>
 
       {/* HERO */}
-      <section className="relative isolate flex min-h-[100svh] flex-col items-center justify-center px-5 pt-20">
-        {/* Dot pattern background with radial fade */}
+      <section className="relative isolate flex min-h-[100svh] flex-col items-center justify-center px-5 pt-24">
         <div className="absolute inset-0 -z-10 text-foreground/12">
           <DotPattern />
           <div
@@ -138,14 +160,14 @@ function Landing() {
         </div>
 
         <div className="flex flex-col items-center text-center">
-          <AnyrampLogo size={156} />
+          <AnyrampLogo size={148} />
 
           <span
             data-reveal
             className="mt-8 inline-flex items-center gap-2 rounded-full bg-surface px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground ring-1 ring-black/5"
           >
-            <span className="size-1.5 rounded-full bg-accent" />
-            Trustless · Peer-to-peer · Stellar
+            <StellarIcon className="size-3 text-accent" />
+            Built on Stellar · Verified by zk-SNARKs
           </span>
 
           <h1
@@ -161,8 +183,8 @@ function Landing() {
             data-reveal
             className="mt-5 max-w-md text-balance text-sm leading-relaxed text-muted-foreground sm:text-base"
           >
-            Anyramp matches you with a verified peer and proves every payment
-            with a zero-knowledge proof — settled directly on Stellar.
+            Anyramp matches you with a verified peer and proves every fiat
+            payment with a zero-knowledge proof — settled directly on Stellar.
           </p>
 
           <div data-reveal className="mt-8 flex flex-wrap items-center justify-center gap-3">
@@ -177,10 +199,10 @@ function Landing() {
               <ArrowRight className="relative size-4 transition-transform group-hover:translate-x-0.5" />
             </a>
             <a
-              href="#how"
+              href="#flow"
               className="inline-flex items-center gap-1.5 rounded-full bg-surface px-5 py-3.5 text-sm font-medium ring-1 ring-black/5 transition-colors hover:bg-surface-muted"
             >
-              How it works
+              See the flow
             </a>
           </div>
 
@@ -196,11 +218,38 @@ function Landing() {
           </div>
         </div>
 
-        {/* Scroll hint */}
         <div className="pointer-events-none absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] uppercase tracking-[0.3em] text-muted-foreground">
           Scroll
         </div>
       </section>
+
+      {/* PARTNERS MARQUEE */}
+      <section id="partners" className="relative border-y border-black/[0.05] bg-surface/50 py-10">
+        <p
+          data-reveal
+          className="mb-6 text-center text-[11px] font-medium uppercase tracking-[0.22em] text-muted-foreground"
+        >
+          Powering ramps across the Stellar ecosystem
+        </p>
+        <Marquee speed={42}>
+          {partners.map((p) => (
+            <PartnerLogo key={p.name} name={p.name} />
+          ))}
+        </Marquee>
+        <div className="mt-4">
+          <Marquee speed={52} reverse>
+            {partnersAlt.map((p) => (
+              <PartnerLogo key={p.name} name={p.name} muted />
+            ))}
+          </Marquee>
+        </div>
+        {/* Edge fades */}
+        <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-background to-transparent" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-background to-transparent" />
+      </section>
+
+      {/* ANIMATED BEAM — Stellar at the center */}
+      <BeamSection />
 
       {/* FEATURES */}
       <section className="relative px-5 py-28">
@@ -281,9 +330,9 @@ function Landing() {
       {/* TRUST STRIP */}
       <section className="relative px-5 py-24">
         <div className="mx-auto grid max-w-5xl gap-6 sm:grid-cols-3">
-          <Stat data-reveal kpi="0" label="Custodians in the loop" />
-          <Stat data-reveal kpi="<2s" label="Average peer match" />
-          <Stat data-reveal kpi="100%" label="Proofs verified on-chain" />
+          <Stat kpi="0" label="Custodians in the loop" />
+          <Stat kpi="<2s" label="Average peer match" />
+          <Stat kpi="100%" label="Proofs verified on-chain" />
         </div>
       </section>
 
@@ -321,7 +370,7 @@ function Landing() {
         <div className="mx-auto flex max-w-5xl flex-col items-center justify-between gap-4 sm:flex-row">
           <div className="flex items-center gap-2">
             <span className="grid size-6 place-items-center rounded-full bg-foreground">
-              <span className="size-2 rotate-45 rounded-[2px] bg-background" />
+              <StellarIcon className="size-3 text-background" />
             </span>
             <span className="font-serif tracking-tight">Anyramp</span>
           </div>
@@ -343,6 +392,124 @@ function Landing() {
   );
 }
 
+/* ───────────────── Beam Section ───────────────── */
+
+function BeamSection() {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const stellarRef = useRef<HTMLDivElement>(null);
+  const userRef = useRef<HTMLDivElement>(null);
+  const peerRef = useRef<HTMLDivElement>(null);
+  const bankRef = useRef<HTMLDivElement>(null);
+  const walletRef = useRef<HTMLDivElement>(null);
+  const sepaRef = useRef<HTMLDivElement>(null);
+  const pixRef = useRef<HTMLDivElement>(null);
+
+  return (
+    <section id="flow" className="relative px-5 py-28">
+      <div className="mx-auto max-w-5xl">
+        <div data-reveal className="mb-14 max-w-2xl">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-accent">
+            The flow
+          </p>
+          <h2 className="mt-3 font-serif text-4xl leading-[1.05] tracking-tight sm:text-5xl">
+            Fiat rails in.
+            <br />
+            <em className="italic text-muted-foreground">Stellar settlement out.</em>
+          </h2>
+          <p className="mt-4 max-w-prose text-sm text-muted-foreground sm:text-base">
+            Anyramp routes every payment through a peer, generates a zk-SNARK
+            of the receipt, and unlocks Stellar escrow — all without a
+            custodian touching your funds.
+          </p>
+        </div>
+
+        <div
+          data-reveal
+          ref={containerRef}
+          className="relative mx-auto h-[420px] w-full max-w-3xl overflow-hidden rounded-[32px] bg-surface ring-1 ring-black/5 sm:h-[460px]"
+        >
+          <div className="absolute inset-0 bg-soft-grid opacity-60" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(70% 60% at 50% 50%, transparent 0%, var(--color-surface) 90%)",
+            }}
+          />
+
+          {/* Left column */}
+          <div className="absolute inset-y-0 left-6 flex flex-col justify-around sm:left-10">
+            <BeamNode innerRef={bankRef} className="size-12 sm:size-14" label="Bank">
+              <Landmark className="size-5 text-muted-foreground" />
+            </BeamNode>
+            <BeamNode innerRef={userRef} className="size-12 sm:size-14" label="You">
+              <Smartphone className="size-5 text-foreground" />
+            </BeamNode>
+            <BeamNode innerRef={sepaRef} className="size-12 sm:size-14" label="SEPA">
+              <Building2 className="size-5 text-muted-foreground" />
+            </BeamNode>
+          </div>
+
+          {/* Center hub — Stellar */}
+          <div className="absolute inset-0 grid place-items-center">
+            <div
+              ref={stellarRef}
+              className="relative grid size-20 place-items-center rounded-3xl bg-foreground text-background shadow-lift sm:size-24"
+            >
+              <StellarIcon className="size-9 sm:size-10" />
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-3xl ring-2 ring-accent/40"
+                style={{ animation: "pulse-ring 2.4s ease-out infinite" }}
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 rounded-3xl ring-2 ring-accent/30"
+                style={{ animation: "pulse-ring 2.4s ease-out 1.2s infinite" }}
+              />
+            </div>
+          </div>
+
+          {/* Right column */}
+          <div className="absolute inset-y-0 right-6 flex flex-col justify-around sm:right-10">
+            <BeamNode innerRef={peerRef} className="size-12 sm:size-14" label="Peer">
+              <Smartphone className="size-5 text-muted-foreground" />
+            </BeamNode>
+            <BeamNode innerRef={walletRef} className="size-12 sm:size-14" label="Wallet">
+              <Wallet className="size-5 text-foreground" />
+            </BeamNode>
+            <BeamNode innerRef={pixRef} className="size-12 sm:size-14" label="Pix">
+              <CircleDollarSign className="size-5 text-muted-foreground" />
+            </BeamNode>
+          </div>
+
+          <AnimatedBeams
+            containerRef={containerRef}
+            connections={[
+              { from: bankRef, to: stellarRef, curvature: 50, delay: 0 },
+              { from: userRef, to: stellarRef, curvature: 0, delay: 0.4 },
+              { from: sepaRef, to: stellarRef, curvature: -50, delay: 0.8 },
+              { from: stellarRef, to: peerRef, curvature: 50, delay: 0.2 },
+              { from: stellarRef, to: walletRef, curvature: 0, delay: 0.6 },
+              { from: stellarRef, to: pixRef, curvature: -50, delay: 1.0 },
+            ]}
+          />
+
+          {/* Proof chip */}
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-background/90 px-3 py-1.5 text-[10px] font-medium uppercase tracking-[0.16em] text-muted-foreground ring-1 ring-black/5 backdrop-blur">
+            <span className="inline-flex items-center gap-1.5">
+              <CheckCircle2 className="size-3 text-accent" />
+              zk-proof · verified
+            </span>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ───────────────── Helpers ───────────────── */
+
 const steps = [
   {
     title: "Pick a side & an amount",
@@ -360,6 +527,41 @@ const steps = [
     Icon: Globe2,
   },
 ];
+
+const partners = [
+  { name: "Stellar" },
+  { name: "Soroban" },
+  { name: "USDC" },
+  { name: "Freighter" },
+  { name: "Lobstr" },
+  { name: "Anchor" },
+  { name: "Reflector" },
+];
+
+const partnersAlt = [
+  { name: "SEPA" },
+  { name: "Pix" },
+  { name: "Wise" },
+  { name: "Mercado" },
+  { name: "Allbridge" },
+  { name: "Aquarius" },
+  { name: "StellarX" },
+];
+
+function PartnerLogo({ name, muted }: { name: string; muted?: boolean }) {
+  return (
+    <div
+      className={`flex items-center gap-2.5 whitespace-nowrap font-serif text-2xl tracking-tight transition-colors sm:text-3xl ${
+        muted ? "text-muted-foreground/70" : "text-foreground/80"
+      } hover:text-foreground`}
+    >
+      <span className="grid size-7 place-items-center rounded-full ring-1 ring-black/10">
+        <span className="size-2 rotate-45 rounded-[2px] bg-current opacity-70" />
+      </span>
+      <span>{name}</span>
+    </div>
+  );
+}
 
 function FeatureCard({
   Icon,
@@ -390,7 +592,7 @@ function FeatureCard({
   );
 }
 
-function Stat({ kpi, label }: { kpi: string; label: string; "data-reveal"?: boolean }) {
+function Stat({ kpi, label }: { kpi: string; label: string }) {
   return (
     <div
       data-reveal
