@@ -76,23 +76,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "App App" },
-      { name: "description", content: "App Generated Project" },
-      { name: "author", content: "App" },
-      { property: "og:title", content: "App App" },
-      { property: "og:description", content: "App Generated Project" },
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { title: "Anyramp — Trustless onramp & offramp on Stellar" },
+      {
+        name: "description",
+        content:
+          "Anyramp is a mobile-first, peer-to-peer onramp and offramp on Stellar, secured end-to-end by zero-knowledge proofs.",
+      },
+      { name: "author", content: "Anyramp" },
+      { name: "theme-color", content: "#fafafa" },
+      { property: "og:title", content: "Anyramp — Trustless onramp & offramp on Stellar" },
+      {
+        property: "og:description",
+        content:
+          "Peer-to-peer onramp and offramp on Stellar, secured by zero-knowledge proofs.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@App" },
     ],
     links: [
+      { rel: "stylesheet", href: appCss },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" },
+      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: appCss,
+        href: "https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap",
       },
     ],
   }),
+
   shellComponent: RootShell,
   component: RootComponent,
   notFoundComponent: NotFoundComponent,
