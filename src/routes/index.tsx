@@ -366,7 +366,7 @@ function FeatureCard({
   title,
   body,
 }: {
-  Icon: React.ComponentType<{ className?: string }>;
+  Icon: ComponentType<{ className?: string }>;
   title: string;
   body: string;
 }) {
