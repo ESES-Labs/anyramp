@@ -169,3 +169,27 @@
 @supports not (background: conic-gradient(from var(--beam-angle), red, red)) {
   .border-beam { animation: none; background: transparent; }
 }
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+.group:hover [style*="marquee-scroll"] { animation-play-state: paused; }
+
+@keyframes beam-dash {
+  to { stroke-dashoffset: -660; }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.55; }
+  80%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+.bg-soft-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-foreground) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-foreground) 6%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
