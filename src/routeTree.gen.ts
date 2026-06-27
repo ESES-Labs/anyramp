@@ -15,6 +15,7 @@ import { Route as SecurityRouteImport } from './routes/security'
 import { Route as RampRouteImport } from './routes/ramp'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AppRouteImport } from './routes/app'
+import { Route as IndexRouteImport } from './routes/index'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -46,8 +47,14 @@ const AppRoute = AppRouteImport.update({
   path: '/app',
   getParentRoute: () => rootRouteImport,
 } as any)
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/history': typeof HistoryRoute
   '/ramp': typeof RampRoute
@@ -56,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
 }
 export interface FileRoutesByTo {
+  '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/history': typeof HistoryRoute
   '/ramp': typeof RampRoute
@@ -65,6 +73,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/': typeof IndexRoute
   '/app': typeof AppRoute
   '/history': typeof HistoryRoute
   '/ramp': typeof RampRoute
@@ -75,6 +84,7 @@ export interface FileRoutesById {
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
+    | '/'
     | '/app'
     | '/history'
     | '/ramp'
@@ -82,9 +92,17 @@ export interface FileRouteTypes {
     | '/settings'
     | '/sitemap.xml'
   fileRoutesByTo: FileRoutesByTo
-  to: '/app' | '/history' | '/ramp' | '/security' | '/settings' | '/sitemap.xml'
+  to:
+    | '/'
+    | '/app'
+    | '/history'
+    | '/ramp'
+    | '/security'
+    | '/settings'
+    | '/sitemap.xml'
   id:
     | '__root__'
+    | '/'
     | '/app'
     | '/history'
     | '/ramp'
@@ -94,6 +112,7 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRoute
   HistoryRoute: typeof HistoryRoute
   RampRoute: typeof RampRoute
@@ -146,10 +165,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
+  IndexRoute: IndexRoute,
   AppRoute: AppRoute,
   HistoryRoute: HistoryRoute,
   RampRoute: RampRoute,

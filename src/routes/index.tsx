@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ComponentType } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ShieldCheck, Sparkles, Zap, ArrowRight, Lock, Globe2 } from "lucide-react";
 import { DotPattern } from "@/components/dot-pattern";
