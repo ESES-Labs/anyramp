@@ -68,7 +68,7 @@ function RampPage() {
     <AppShell>
       <div className="px-5 pt-2">
         <Link
-          to="/"
+          to="/app"
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           <svg className="size-4" viewBox="0 0 16 16" fill="currentColor" aria-hidden>

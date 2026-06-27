@@ -3,7 +3,7 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./bottom-nav";
 
 const titles: Record<string, string> = {
-  "/": "Anyramp",
+  "/app": "Anyramp",
   "/history": "History",
   "/security": "Security",
   "/settings": "Settings",
@@ -17,7 +17,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="mx-auto flex min-h-screen max-w-[480px] flex-col bg-background pb-24 text-foreground">
       <header className="sticky top-0 z-20 flex items-center justify-between bg-background/80 px-5 pb-3 pt-8 backdrop-blur-md">
-        <Link to="/" className="flex items-center gap-2">
+        <Link to="/app" className="flex items-center gap-2">
           <span className="grid size-8 place-items-center rounded-full bg-foreground">
             <span className="size-3 rotate-45 rounded-[2px] bg-background" />
           </span>

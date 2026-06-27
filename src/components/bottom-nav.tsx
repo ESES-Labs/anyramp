@@ -4,13 +4,13 @@ import { House, ReceiptText, ShieldCheck, Settings2 } from "lucide-react";
 import type { ComponentType } from "react";
 
 type NavItem = {
-  to: "/" | "/history" | "/security" | "/settings";
+  to: "/app" | "/history" | "/security" | "/settings";
   label: string;
   Icon: ComponentType<{ className?: string; strokeWidth?: number }>;
 };
 
 const items: NavItem[] = [
-  { to: "/", label: "Home", Icon: House },
+  { to: "/app", label: "Home", Icon: House },
   { to: "/history", label: "History", Icon: ReceiptText },
   { to: "/security", label: "Security", Icon: ShieldCheck },
   { to: "/settings", label: "Settings", Icon: Settings2 },
