@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
+import { OrderSheet } from "@/components/order-sheet";
+import { activeOrder, type Order } from "@/lib/orders";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -16,11 +19,15 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  const [openOrder, setOpenOrder] = useState<Order | null>(null);
+  const live = activeOrder();
+
   return (
     <AppShell>
       <BalanceSection />
-      <ActiveOrderCard />
+      <ActiveOrderCard order={live} onOpen={() => setOpenOrder(live)} />
       <AssetsSection />
+      <OrderSheet open={!!openOrder} onClose={() => setOpenOrder(null)} order={openOrder} />
     </AppShell>
   );
 }
@@ -67,10 +74,14 @@ function BalanceSection() {
   );
 }
 
-function ActiveOrderCard() {
+function ActiveOrderCard({ order, onOpen }: { order: Order; onOpen: () => void }) {
   return (
     <section className="px-4">
-      <article className="rounded-3xl bg-surface p-5 shadow-quiet ring-1 ring-black/5">
+      <button
+        type="button"
+        onClick={onOpen}
+        className="block w-full rounded-3xl bg-surface p-5 text-left shadow-quiet ring-1 ring-black/5 transition-transform active:scale-[0.99]"
+      >
         <header className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="relative flex size-2">
@@ -80,33 +91,35 @@ function ActiveOrderCard() {
             <span className="text-sm font-medium text-foreground">Order in progress</span>
           </div>
           <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-            ID 8841-ZK
+            ID {order.id}
           </span>
         </header>
 
         <div className="mb-8 flex items-end justify-between">
           <div>
-            <p className="mb-1 text-xs text-muted-foreground">Buying</p>
+            <p className="mb-1 text-xs text-muted-foreground">
+              {order.kind === "onramp" ? "Buying" : "Selling"}
+            </p>
             <p className="text-2xl font-medium tracking-tight">
-              850.00 <span className="font-serif italic text-muted-foreground">USDC</span>
+              {order.amount.replace(/^[+−-]/, "")}{" "}
+              <span className="font-serif italic text-muted-foreground">{order.asset}</span>
             </p>
           </div>
           <div className="text-right">
             <p className="mb-1 text-xs text-muted-foreground">Rate</p>
-            <p className="text-sm font-medium">1 USDC = 1.00 USD</p>
+            <p className="text-sm font-medium">{order.rate}</p>
           </div>
         </div>
 
         <Stepper />
 
-        <Link
-          to="/ramp"
-          search={{ side: "buy" as const }}
-          className="mt-6 block w-full rounded-full bg-surface-muted py-2.5 text-center text-xs font-semibold uppercase tracking-wider text-muted-foreground ring-1 ring-black/5 transition-colors hover:text-foreground"
-        >
-          View details
-        </Link>
-      </article>
+        <span className="mt-6 flex w-full items-center justify-center gap-1.5 rounded-full bg-surface-muted py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground ring-1 ring-black/5">
+          Tap to view proof
+          <svg className="size-3" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+            <path d="M6.22 4.22a.75.75 0 0 1 1.06 0l3.25 3.25a.75.75 0 0 1 0 1.06l-3.25 3.25a.75.75 0 1 1-1.06-1.06L8.94 8 6.22 5.28a.75.75 0 0 1 0-1.06Z" />
+          </svg>
+        </span>
+      </button>
     </section>
   );
 }
@@ -114,16 +127,8 @@ function ActiveOrderCard() {
 function Stepper() {
   return (
     <ol className="space-y-1">
-      <Step
-        state="done"
-        title="Peer matched"
-        subtitle="Verified match found in 1.2s"
-      />
-      <Step
-        state="active"
-        title="ZK proof generation"
-        subtitle="Encrypting payment metadata"
-      />
+      <Step state="done" title="Peer matched" subtitle="Verified match found in 1.2s" />
+      <Step state="active" title="ZK proof generation" subtitle="Encrypting payment metadata" />
       <Step state="upcoming" title="Settlement on Stellar" subtitle="Awaiting cryptographic verification" last />
     </ol>
   );
@@ -163,11 +168,7 @@ function Step({
           <span className="grid size-5 place-items-center rounded-full bg-background ring-1 ring-black/5" />
         )}
         {!last && (
-          <span
-            className={`mt-2 h-8 w-px ${
-              state === "done" ? "bg-accent/30" : "bg-border"
-            }`}
-          />
+          <span className={`mt-2 h-8 w-px ${state === "done" ? "bg-accent/30" : "bg-border"}`} />
         )}
       </div>
       <div className="pb-4">
@@ -201,11 +202,12 @@ type Asset = {
   amount: string;
   usd: string;
   glyph: "stellar" | "usdc";
+  side: "buy" | "sell";
 };
 
 const assets: Asset[] = [
-  { symbol: "XLM", name: "Stellar", amount: "4,290.00", usd: "$482.10", glyph: "stellar" },
-  { symbol: "USDC", name: "USD Coin", amount: "12,000.40", usd: "$12,000.40", glyph: "usdc" },
+  { symbol: "XLM", name: "Stellar", amount: "4,290.00", usd: "$482.10", glyph: "stellar", side: "buy" },
+  { symbol: "USDC", name: "USD Coin", amount: "12,000.40", usd: "$12,000.40", glyph: "usdc", side: "buy" },
 ];
 
 function AssetsSection() {
@@ -215,20 +217,26 @@ function AssetsSection() {
         <h3 className="text-sm font-medium text-muted-foreground">Your assets</h3>
         <span className="text-[11px] font-medium text-accent">Stellar mainnet</span>
       </div>
-      <ul className="space-y-4">
+      <ul className="space-y-2">
         {assets.map((a) => (
-          <li key={a.symbol} className="flex items-center justify-between">
-            <div className="flex min-w-0 items-center gap-3">
-              <AssetGlyph kind={a.glyph} />
-              <div className="min-w-0">
-                <p className="truncate font-medium">{a.name}</p>
-                <p className="text-xs text-muted-foreground">{a.symbol}</p>
+          <li key={a.symbol}>
+            <Link
+              to="/ramp"
+              search={{ side: a.side }}
+              className="flex items-center justify-between rounded-2xl px-2 py-2 -mx-2 transition-colors active:bg-surface-muted"
+            >
+              <div className="flex min-w-0 items-center gap-3">
+                <AssetGlyph kind={a.glyph} />
+                <div className="min-w-0">
+                  <p className="truncate font-medium">{a.name}</p>
+                  <p className="text-xs text-muted-foreground">{a.symbol}</p>
+                </div>
               </div>
-            </div>
-            <div className="text-right">
-              <p className="font-medium">{a.amount}</p>
-              <p className="text-xs text-muted-foreground">{a.usd}</p>
-            </div>
+              <div className="text-right">
+                <p className="font-medium">{a.amount}</p>
+                <p className="text-xs text-muted-foreground">{a.usd}</p>
+              </div>
+            </Link>
           </li>
         ))}
       </ul>
