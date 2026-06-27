@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { BottomNav } from "./bottom-nav";
+import { ToastProvider } from "./toast";
 
 const titles: Record<string, string> = {
   "/": "Anyramp",
@@ -13,31 +14,30 @@ const titles: Record<string, string> = {
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const title = titles[pathname] ?? "Anyramp";
-  const isHome = pathname === "/";
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-[480px] flex-col bg-background pb-24 text-foreground">
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-background/80 px-5 pb-3 pt-8 backdrop-blur-md">
-        <div className="flex items-center gap-2">
+    <ToastProvider>
+      <div className="mx-auto flex min-h-screen max-w-[480px] flex-col bg-background pb-24 text-foreground">
+        <header className="sticky top-0 z-20 flex items-center justify-between bg-background/80 px-5 pb-3 pt-8 backdrop-blur-md">
           <Link to="/" className="flex items-center gap-2">
             <span className="grid size-8 place-items-center rounded-full bg-foreground">
               <span className="size-3 rotate-45 rounded-[2px] bg-background" />
             </span>
-            {isHome ? (
-              <span className="font-medium tracking-tight">{title}</span>
-            ) : (
-              <span className="font-medium tracking-tight">{title}</span>
-            )}
+            <span className="font-medium tracking-tight">{title}</span>
           </Link>
-        </div>
-        <div className="grid size-10 place-items-center rounded-full bg-surface-muted ring-1 ring-black/5">
-          <span className="font-serif text-sm italic text-muted-foreground">a</span>
-        </div>
-      </header>
+          <Link
+            to="/settings"
+            aria-label="Account"
+            className="grid size-10 place-items-center rounded-full bg-surface-muted ring-1 ring-black/5 transition-transform active:scale-95"
+          >
+            <span className="font-serif text-sm italic text-muted-foreground">a</span>
+          </Link>
+        </header>
 
-      <main className="flex-1">{children}</main>
+        <main className="flex-1">{children}</main>
 
-      <BottomNav />
-    </div>
+        <BottomNav />
+      </div>
+    </ToastProvider>
   );
 }
