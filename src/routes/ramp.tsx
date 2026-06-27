@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { motion } from "framer-motion";
 import { z } from "zod";
 import { AppShell } from "@/components/app-shell";
 import { Sheet } from "@/components/sheet";
@@ -84,18 +85,28 @@ function RampPage() {
       </div>
 
       <div className="mt-6 px-5">
-        <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-muted p-1 ring-1 ring-black/5">
-          {(["buy", "sell"] as const).map((s) => (
-            <button
-              key={s}
-              onClick={() => navigate({ search: { side: s } })}
-              className={`rounded-full py-2 text-sm font-medium transition-colors ${
-                side === s ? "bg-surface text-foreground shadow-quiet" : "text-muted-foreground"
-              }`}
-            >
-              {s === "buy" ? "Onramp" : "Offramp"}
-            </button>
-          ))}
+        <div className="relative grid grid-cols-2 rounded-full bg-surface-muted p-1 ring-1 ring-black/5">
+          {(["buy", "sell"] as const).map((s) => {
+            const active = side === s;
+            return (
+              <button
+                key={s}
+                onClick={() => navigate({ search: { side: s } })}
+                className="relative z-10 rounded-full py-2 text-sm font-medium transition-colors"
+              >
+                {active && (
+                  <motion.span
+                    layoutId="ramp-switch-pill"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    className="absolute inset-0 -z-10 rounded-full bg-surface shadow-quiet ring-1 ring-black/5"
+                  />
+                )}
+                <span className={active ? "text-foreground" : "text-muted-foreground"}>
+                  {s === "buy" ? "Onramp" : "Offramp"}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 

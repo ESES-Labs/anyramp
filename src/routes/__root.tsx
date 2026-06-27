@@ -12,6 +12,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportError } from "../lib/error-reporting";
 import { ToastProvider } from "../components/toast";
+import { PageTransition } from "../components/page-transition";
 
 function NotFoundComponent() {
   return (
@@ -132,8 +133,10 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ToastProvider>
-        {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
-        <Outlet />
+        <PageTransition>
+          {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
+          <Outlet />
+        </PageTransition>
       </ToastProvider>
     </QueryClientProvider>
   );

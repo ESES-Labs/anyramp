@@ -52,12 +52,13 @@ function BalanceSection() {
         <Link
           to="/ramp"
           search={{ side: "buy" as const }}
-          className="flex flex-1 items-center justify-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground ring-1 ring-primary transition-transform active:scale-[0.98]"
+          className="group relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-full bg-primary px-4 py-3 text-sm font-medium text-primary-foreground ring-1 ring-primary transition-transform active:scale-[0.98]"
         >
-          <svg className="size-4 shrink-0" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+          <span aria-hidden className="border-beam rounded-full" />
+          <svg className="relative size-4 shrink-0" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
             <path d="M8.75 3.75a.75.75 0 0 0-1.5 0v3.5h-3.5a.75.75 0 0 0 0 1.5h3.5v3.5a.75.75 0 0 0 1.5 0v-3.5h3.5a.75.75 0 0 0 0-1.5h-3.5v-3.5Z" />
           </svg>
-          Buy crypto
+          <span className="relative">Buy crypto</span>
         </Link>
         <Link
           to="/ramp"
