@@ -19,6 +19,9 @@ import { AnyrampLogo } from "@/components/anyramp-logo";
 import { AnimatedBeams, BeamNode } from "@/components/animated-beam";
 import { Marquee } from "@/components/marquee";
 import { StellarIcon } from "@/components/stellar-icon";
+import { ZkExplainer } from "@/components/zk-explainer";
+import { DemoWidget } from "@/components/demo-widget";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
