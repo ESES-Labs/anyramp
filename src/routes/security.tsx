@@ -195,21 +195,24 @@ function SecRow({
 function Toggle({ on, onChange }: { on: boolean; onChange: (v: boolean) => void }) {
   return (
     <button
+      type="button"
       onClick={() => onChange(!on)}
       role="switch"
       aria-checked={on}
-      className={`relative h-6 w-10 rounded-full transition-colors ${
-        on ? "bg-foreground" : "bg-surface-muted ring-1 ring-black/10"
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent/40 ${
+        on ? "bg-foreground" : "bg-surface-muted ring-1 ring-inset ring-black/10"
       }`}
     >
       <span
-        className={`absolute top-0.5 h-5 w-5 rounded-full bg-background shadow-quiet transition-transform ${
-          on ? "translate-x-[18px]" : "translate-x-0.5"
+        aria-hidden
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-background shadow-quiet ring-1 ring-black/5 transition-transform duration-200 ${
+          on ? "translate-x-[22px]" : "translate-x-0.5"
         }`}
       />
     </button>
   );
 }
+
 
 function Info({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
