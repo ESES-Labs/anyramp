@@ -1,22 +1,24 @@
 import type { ReactNode } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useRouterState } from "@tanstack/react-router";
 
 export function PageTransition({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const reduce = useReducedMotion();
 
   return (
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={pathname}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        exit={{ opacity: 0, y: -6 }}
-        transition={{ duration: 0.28, ease: [0.22, 0.61, 0.36, 1] }}
-        style={{ minHeight: "100%" }}
+        initial={reduce ? false : { opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={reduce ? undefined : { opacity: 0 }}
+        transition={{ duration: 0.2, ease: "easeOut" }}
+        style={{ minHeight: "100%", willChange: "opacity" }}
       >
         {children}
       </motion.div>
     </AnimatePresence>
   );
 }
+
