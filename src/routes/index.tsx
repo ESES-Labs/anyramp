@@ -275,7 +275,14 @@ function Landing() {
       {/* ANIMATED BEAM — Stellar at the center */}
       <BeamSection />
 
+      {/* ZK EXPLAINER */}
+      <ZkExplainer />
+
+      {/* INTERACTIVE DEMO */}
+      <DemoWidget />
+
       {/* FEATURES */}
+
       <section className="relative px-5 py-28">
         <div className="mx-auto max-w-5xl">
           <div data-reveal className="mb-14 max-w-2xl">
