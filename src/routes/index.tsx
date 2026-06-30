@@ -46,8 +46,12 @@ export const Route = createFileRoute("/")({
 function Landing() {
   const rootRef = useRef<HTMLDivElement>(null);
 
-  // Lenis smooth scroll
+  // Lenis smooth scroll (skipped on reduced-motion / coarse pointer for perf)
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const prefersReduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduce) return;
+
     let cancelled = false;
     let raf = 0;
     let lenisInstance: { raf: (t: number) => void; destroy: () => void } | null =
@@ -57,9 +61,10 @@ function Landing() {
       const { default: Lenis } = await import("lenis");
       if (cancelled) return;
       const lenis = new Lenis({
-        duration: 1.15,
+        lerp: 0.12,
         smoothWheel: true,
-        easing: (t: number) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        wheelMultiplier: 1,
+        syncTouch: false,
       });
       lenisInstance = lenis;
       const loop = (time: number) => {
@@ -76,8 +81,11 @@ function Landing() {
     };
   }, []);
 
-  // GSAP scroll-reveal
+  // GSAP scroll-reveal — opacity + translate only, no layout-shifting properties
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const prefersReduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
     let ctx: { revert: () => void } | null = null;
     (async () => {
       const gsap = (await import("gsap")).default;
@@ -85,40 +93,53 @@ function Landing() {
       gsap.registerPlugin(ScrollTrigger);
 
       ctx = gsap.context(() => {
-        gsap.utils.toArray<HTMLElement>("[data-reveal]").forEach((el) => {
-          gsap.from(el, {
-            opacity: 0,
-            y: 36,
-            duration: 0.9,
-            ease: "power3.out",
+        if (prefersReduce) {
+          gsap.set("[data-reveal], [data-reveal-stagger] > *", { clearProps: "all", opacity: 1 });
+          return;
+        }
+
+        // Set initial state synchronously to avoid FOUC + layout shift
+        const reveals = gsap.utils.toArray<HTMLElement>("[data-reveal]");
+        gsap.set(reveals, { opacity: 0, y: 24, force3D: true });
+        reveals.forEach((el) => {
+          gsap.to(el, {
+            opacity: 1,
+            y: 0,
+            duration: 0.7,
+            ease: "power2.out",
+            force3D: true,
             scrollTrigger: {
               trigger: el,
               start: "top 88%",
-              toggleActions: "play none none reverse",
+              once: true,
             },
           });
         });
 
-        gsap.utils.toArray<HTMLElement>("[data-reveal-stagger] > *").forEach(
-          (el, i) => {
-            gsap.from(el, {
-              opacity: 0,
-              y: 24,
-              duration: 0.7,
-              delay: i * 0.07,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: el,
-                start: "top 90%",
-                toggleActions: "play none none reverse",
-              },
-            });
-          }
+        const staggered = gsap.utils.toArray<HTMLElement>(
+          "[data-reveal-stagger] > *",
         );
+        gsap.set(staggered, { opacity: 0, y: 18, force3D: true });
+        staggered.forEach((el, i) => {
+          gsap.to(el, {
+            opacity: 1,
+            y: 0,
+            duration: 0.55,
+            delay: (i % 4) * 0.06,
+            ease: "power2.out",
+            force3D: true,
+            scrollTrigger: {
+              trigger: el,
+              start: "top 92%",
+              once: true,
+            },
+          });
+        });
       }, rootRef);
     })();
     return () => ctx?.revert();
   }, []);
+
 
   return (
     <div
