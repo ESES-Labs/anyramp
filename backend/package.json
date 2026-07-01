@@ -1,18 +1,33 @@
 {
   "name": "anyramp-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "description": "AnyRamp fiat->USDC on-ramp backend (Hono + Bun + Postgres)",
   "type": "module",
+  "module": "src/index.ts",
+  "scripts": {
+    "dev": "bun --watch src/index.ts",
+    "start": "bun src/index.ts",
+    "mock": "bun --watch src/services/mock-pakasir.ts",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio",
+    "typecheck": "tsc --noEmit"
+  },
   "dependencies": {
+    "@hono/zod-validator": "^0.4.2",
     "@reclaimprotocol/zk-fetch": "^1.0.0",
-    "dotenv": "^17.4.2",
-    "express": "^5.2.1"
+    "drizzle-orm": "^0.38.3",
+    "hono": "^4.6.15",
+    "hono-pino": "^0.7.0",
+    "pino": "^9.6.0",
+    "postgres": "^3.4.5",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.1.14",
+    "drizzle-kit": "^0.30.1",
+    "pino-pretty": "^13.0.0",
+    "typescript": "^6.0.3"
   }
 }

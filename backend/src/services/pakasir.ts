@@ -1,6 +1,6 @@
 // Pakasir adapter — real API shapes per https://pakasir.com/p/docs (22 Jun 2026).
-// Works against the real API or src/mock-pakasir.ts (same contract), switched by base URL.
-import { config } from './config.ts';
+// Works against the real API or the mock (same contract), switched by base URL.
+import { env } from '../config/env.ts';
 
 export interface PakasirPayment {
   project: string;
@@ -20,10 +20,11 @@ export interface PakasirTransaction {
   status: 'pending' | 'completed' | 'canceled';
   payment_method: string | null;
   completed_at: string | null;
+  is_sandbox?: boolean;
 }
 
 async function post<T>(path: string, body: object): Promise<T> {
-  const res = await fetch(`${config.pakasirBaseUrl}${path}`, {
+  const res = await fetch(`${env.PAKASIR_BASE_URL}${path}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -32,7 +33,7 @@ async function post<T>(path: string, body: object): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-const creds = () => ({ project: config.pakasirProject, api_key: config.pakasirApiKey });
+const creds = () => ({ project: env.PAKASIR_PROJECT, api_key: env.PAKASIR_API_KEY });
 
 export async function createTransaction(orderId: string, amount: number, method = 'qris') {
   const { payment } = await post<{ payment: PakasirPayment }>(
@@ -52,14 +53,14 @@ export async function cancelTransaction(orderId: string, amount: number) {
 }
 
 /** This exact GET is also the zkFetch target (with api_key templated out — see zkprover.ts). */
-export function transactionDetailUrl(orderId: string, amount: number, apiKey = config.pakasirApiKey) {
+export function transactionDetailUrl(orderId: string, amount: number, apiKey = env.PAKASIR_API_KEY) {
   const q = new URLSearchParams({
-    project: config.pakasirProject,
+    project: env.PAKASIR_PROJECT,
     amount: String(amount),
     order_id: orderId,
     api_key: apiKey,
   });
-  return `${config.pakasirBaseUrl}/api/transactiondetail?${q}`;
+  return `${env.PAKASIR_BASE_URL}/api/transactiondetail?${q}`;
 }
 
 export async function transactionDetail(orderId: string, amount: number): Promise<PakasirTransaction> {
