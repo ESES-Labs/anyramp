@@ -1,0 +1,17 @@
+# Rust's output directory
+target
+
+# Local settings
+.soroban
+.stellar
+
+# Node
+node_modules/
+
+# Secrets — never commit real keys, even to a private repo.
+# Real values live in backend/.env locally; see backend/.env.example.
+.env
+*.local.md
+
+# OS
+.DS_Store

@@ -1,0 +1,245 @@
+Neticon Pay - Developer Hub & Dokumentasi API
+Developer Hub
+Neticon Pay H2H API
+"Menghubungkan Bisnis Anda dengan Ribuan Produk Digital secara Instan dan Aman."
+Memuat Kredensial...
+ID Kemitraan (User ID)
+...
+Secret API Key
+Reset Key
+PERINGATAN: API Key bersifat rahasia seperti PIN Bank. Jangan berikan kepada siapapun!
+Global Webhook URL
+Simpan URL
+Otomatis dipanggil jika payload transaksi tidak menyertakan callback_url.
+Akses H2H Anda Terkunci
+Fitur integrasi sistem (API H2H) saat ini belum diaktifkan atau sedang ditangguhkan untuk akun Anda.
+Hubungi Administrator
+Dokumentasi Integrasi API
+DOKUMEN RESMI
+Pendahuluan
+Payment Gateway
+Aturan & Keamanan
+Cek Harga & Excel
+Instruksi Transaksi
+🔥 Notifikasi Webhook
+Polling Status
+Modul Integrasi Bot
+Selamat Datang di Ekosistem H2H Neticon Pay
+Neticon Pay Host-to-Host (H2H) adalah infrastruktur API RESTful berstandar enterprise yang dibangun khusus untuk mengakselerasi ekspansi pengembang aplikasi (developer), pemegang server PPOB, serta para penggiat bisnis digital di Indonesia. Infrastruktur ini memungkinkan sistem Anda untuk terhubung langsung dengan basis layanan kami secara instan, mengautomasi pemesanan tanpa intervensi pihak ketiga.
+Arsitektur Pemotongan Saldo Terpusat
+Implementasi API menggunakan Saldo Akun Neticon Pay Mitra sebagai satu-satunya sumber pendanaan (deposit-based).
+Alur Transaksional: Pengguna akhir (end-user) bertransaksi melalui aplikasi Anda menggunakan modul pembayaran Anda sendiri. Setelah memvalidasi pelunasan dari sisi Anda, antarmuka backend Anda akan mengirim instruksi pemrosesan produk kepada kami. Seketika itu pula, Neticon Pay akan mengurangi saldo Anda sejumlah Harga Dasar (Harga Modal) mitra, memberikan Anda kendali mutlak atas margin laba/profitabilitas.
+Komitmen Infrastruktur Neticon Pay:
+Pelaporan Real-Time (Webhook Asynchronous): Menghilangkan kelemahan latensi metode pemeriksaan tradisional (Polling) yang merugikan. Server Neticon akan melempar transmisi pelaporan HTTP (Webhook) saat status di penyedia layanan pusat dinyatakan SUKSES/GAGAL.
+Protokol Keamanan Tingkat Tinggi (Dynamic MD5 Sign): Sistem perisai anti maling. Memblokir skenario manipulasi data dan Replay Attacks dengan mengacak hash kunci referensi yang berganti-ganti di tiap detik transaksi.
+UANG
+X
+Payment Gateway Andalan Bisnis
+Solusi terima pembayaran instan tanpa hambatan birokrasi.
+4 Alasan Pilih UangX:
+🚀
+Daftar & Langsung Pakai Tanpa syarat KYC/KTP yang rumit.
+💸
+Bebas Tarik Kapan Saja Pencairan instan ke rekening Anda 24/7 tanpa libur.
+🏦
+0% Dana Ditahan Semua uang yang masuk murni milik Anda, tanpa holding balance.
+🛡️
+Auto-Verify Cerdas Webhook realtime untuk memproses pesanan di web/bot Anda.
+Buat Akun Merchant UangX
+Salin
+Akses Portal UangX
+Base URL Endpoint Utama (Production)
+https://m.neticonpay.my.id/api/h2h/api.php
+POST
+Endpoint tunggal untuk memproses seluruh komunikasi interkoneksi RESTful (Pengecekan Saldo, Katalog, Pembelian).
+Protokol Kriptografi Tanda Tangan (Signature)
+Demi melindungi pilar validitas dan integritas transaksi, setiap bundel pemuatan format JSON mewajibkan transmisi parameter identifikasi sign. Atribut hash ini mengevaluasi otorisasi tingkat pengguna internal untuk menangkal intersepsi komunikasi.
+Skema Kriptografi Endpoint Inquiry (Profil/Katalog)
+md5(user_id + api_key + action)
+Lakukan proses String Concatenation pada instrumen variabel user_id, api_key, serta nilai tipe eksekusi action (contoh spesifik: "profile"), selanjutnya implementasikan formula hashing MD5 128-bit.
+Skema Kriptografi Endpoint Transaksional (Pembelian/Status)
+md5(user_id + api_key + ref_id)
+Sebagai respon perlindungan berlapis di sisi transaksional, Signature wajib direkatkan pada kode unik pemesanan Anda (ref_id). Algoritma ini me-nullifikasi fungsi identitas hash bila dipergunakan ulang (Replay Attack).
+Database Katalog Harga
+Unduh file Excel/CSV ini untuk memasukkan data (Kode SKU & Harga) secara manual ke sistem Anda. Data otomatis disinkronisasi dengan harga jual terkini.
+Unduh File CSV Lengkap
+Sinkronisasi Inventori (Via API)
+Akses fungsional endpoint "action": "pricelist" memampukan sistem mesin server internal milik Mitra untuk mendisplay varian Stock Keeping Unit (SKU), ketersediaan stok/status produk, beserta acuan struktur Pricing Modal Neticon Pay untuk kepentingan markup harga ritel aplikasi Anda.
+Protokol Praktik Terbaik (Best Practice): Sistem Anda sangat diwajibkan untuk memberlakukan manajemen Data Caching Strategy. Gunakan fungsi Cron Job Server untuk menarik data Pricelist per jam. Tidak diperkenankan me-request API Pricelist secara konstan bersamaan lalu-lalang klik pengguna yang dapat memicu pemblokiran otomatis dari sistem pertahanan DDoS kami.
+Struktur Parameter Transmisi (JSON Request):
+Salin
+{
+"user_id": "1",
+"api_key": "NP-1234567890",
+"action": "pricelist",
+"sign": "md5(1NP-1234567890pricelist)"
+}
+Standar Arsitektur Respon Sistem (JSON Response):
+Salin
+{
+"status": true,
+"data": [
+{
+"kode_produk": "S5",
+"nama_produk": "Telkomsel 5.000",
+"kategori": "PULSA",
+"harga": "5800",
+"status": "AKTIF"
+}
+]
+}
+Metodologi Eksekusi Permintaan (Order Placement)
+Inisiasi param "action": "order" mendelegasikan otoritas penuh pada arsitektur mesin backend Neticon Pay untuk segera mengalokasikan validasi pemotongan saldo finansial, dan mengirimkan transmisi penagihan kepada aggregator pusat telekomunikasi.
+Komponen Variabel Mandatori POST:
+target
+Identitas presisi dari objek tujuan (Contoh: Parameter MSISDN Nomor Seluler Pelanggan, User ID Entitas Ekosistem Game, ID Meteran Pratam PLN).
+kode_produk
+Pemilihan Identitas Kode Produk / SKU referensial unik (misal: S10, FF50, DANA20) bersumber dari katalog data.
+ref_id
+Parameter Key Index tunggal berbasis referensi penomoran Invoice lokal milik Anda. Aturan kembar ganda ditolak absolut untuk mencegah redundansi berbayar (Double Purchase). Limitasi maksimum diatur dalam rentang 50 Karakter Alfanumerik.
+*callback_url
+*(Instrumen Optimasi Sistem Asinkron)* Titik akhir spesifik pendaratan balasan (Endpoint URL Server Tujuan) sebagai destinasi integrasi penerimaan reportase status secara utuh dan Real-Time.
+Model Sintaksis Eksekusi POST JSON:
+Salin
+{
+"user_id": "1",
+"api_key": "NP-1234567890",
+"action": "order",
+"sign": "md5(1NP-1234567890TRX-001)",
+"target": "081234567890",
+"kode_produk": "S10",
+"ref_id": "TRX-001",
+"callback_url": "https://domain-anda.com/endpoint/webhook.php"
+}
+Pengembalian Respon Awal Bersifat Konstan PENDING:
+Salin
+{
+"status": true,
+"message": "Transaction Successfully Created",
+"data": {
+"ref_id": "TRX-001",
+"invoice_neticon": "H2H-1678901234",
+"status": "PENDING"
+}
+}
+KRUSIAL
+Notifikasi Asinkron & Pelaporan Webhook
+Mekanisme transmisi Callback / Webhook dirancang secara komprehensif sebagai jalur pemberitahuan informasi pemrosesan mutlak (Event-Driven Reporting). Metode ini secara harfiah menghapus rutinitas pertanyaan frekuensi repetitif (Polling) server yang membebani jalur transfer data interkoneksi kedua pihak. Sistem agregasi Neticon Pay akan melakukan HTTP POST Call secara proaktif mengeksekusi Ping berisikan balasan fungsional JSON (Success / Failed) secara mendetail mengenaik kepastian injeksi produk ke nomor penerima pada parameter callback_url saat status dinyatakan final.
+Distribusi Payload Terkirim Menuju Endpoint Mitra:
+Salin
+{
+"ref_id": "TRX-001",
+"status": "SUCCESS",
+"sn": "081234567890/SN: 0123456789012345",
+"sign": "5c7b3..."
+}
+Implementasi Dasar Komputasi Klien Penadah Endpoint:
+Validasi Otorisasi Algoritma Kriptografi HMAC (Wajib): Identifikasikan keabsahan laporan payload melalui dekripsi nilai balikan sign dengan menggenerasikan ulang rumusan: md5(ref_id + api_key_mitra + status). Validitas yang berpadu mengindikasikan koneksi bersifat autentik, tertutup, dan terlindungi dari eksploitasi peretas eksternal.
+Salin
+<?php
+// Script Pangkalan Penerima Webhook Mitra (PHP Backend)
+$json = file_get_contents('php://input');
+$data = json_decode($json, true);
+if ($data) {
+$ref_id = $data['ref_id'];
+$status = $data['status']; // Validasi "SUCCESS" atau "FAILED"
+$sn     = $data['sn'];
+$sign   = $data['sign'];
+// Integrasikan Konfigurasi Kredensial Anda (API Key)
+$api_key_mitra = "NP-1234567890";
+// Inisiasi Otorisasi Perbandingan Signature Asinkron
+$valid_sign = md5($ref_id . $api_key_mitra . $status);
+if ($sign === $valid_sign) {
+// -----------------------------------------------------
+// AREA EKSEKUSI PEMROSESAN INTERNAL DATABASE MITRA
+// -----------------------------------------------------
+if ($status == 'SUCCESS') {
+// Operasi Sinkronisasi Ketersediaan Order
+// DB_Execute("UPDATE pesanan SET status='SUKSES', sn='$sn' WHERE ref_id='$ref_id'");
+} else {
+// Operasi Refund Saldo dan Mitigasi Transaksi Gagal Otomatis
+// DB_Execute("UPDATE pesanan SET status='GAGAL' WHERE ref_id='$ref_id'");
+// DB_Execute("UPDATE mutasi_users SET saldo = saldo + 10000");
+}
+// Respons Acknowledge Vital (Menandakan Komunikasi Sukses Tersampaikan)
+echo "OK";
+} else {
+http_response_code(403);
+echo "Akses Interkoneksi Ilegal Terblokir.";
+}
+}
+?>
+Model Sinkronisasi Progresif Konvensional (Status Polling)
+Bila konfigurasi sistem internal platform Anda tidak merespon/mendukung transmisi balik asinkron, kami menyediakan mekanisme pengecekan status yang dilakukan mandiri. Gunakan "action": "status" disertai korelasi id referensi yang valid pada skema variabel pemanggilan. Diwajibkan untuk memberlakukan penundaan batas wajar durasi interaksi pemeriksaan bersyarat setidaknya tiap 10 s/d 15 detik antar permohonan.
+Sintaksis Autentikasi Menggunakan Parameter Eksekusi 2: md5(user_id + api_key + ref_id)
+Komponen Permintaan Penelusuran (JSON POST):
+Salin
+{
+"user_id": "1",
+"api_key": "NP-1234567890",
+"action": "status",
+"sign": "md5(1NP-1234567890TRX-001)",
+"ref_id": "TRX-001"
+}
+Modul Injeksi Perangkat Lunak Bot Otomatis
+Konfigurasi arsitektur modular yang disediakan mempermudah akselerasi integrasi mesin Chatbot Anda dengan infrastruktur Neticon Pay. Dirancang untuk efisiensi development aplikasi basis Node.js (seperti Library Baileys, Whatsapp-web.js, atau ekosistem Telegraf pada Telegram), model logika ini disertai mekanisme Dynamic Hashing Protection yang menyusun sandi validasi MD5 mengikuti parameter operasional yang dibutuhkan secara mandiri.
+Wrapper Klien Pemrosesan
+Salin Kode
+const axios = require('axios');
+const crypto = require('crypto');
+// --- 1. OTENTIKASI & KONFIGURASI KREDENSIAL ---
+const NETICON_URL = "https://m.neticonpay.my.id/api/h2h/api.php";
+const USER_ID = "ISI_USER_ID_ANDA";
+const API_KEY = "ISI_API_KEY_ANDA";
+// --- 2. ASYNCHRONOUS EXECUTABLE FUNCTION (DYNAMIC SIGNING V2.1) ---
+async function tembakNeticon(action, params = {}) {
+let stringToHash = "";
+// Proteksi Integritas dengan Konversi Pola Hash Logikal
+if (action === 'order' || action === 'status') {
+if(!params.ref_id) return { status: false, message: "Kebutuhan entitas ref_id tidak terpenuhi." };
+stringToHash = USER_ID + API_KEY + params.ref_id;
+} else {
+stringToHash = USER_ID + API_KEY + action;
+}
+// Melakukan konversi format string (Heksadesimal Encryption Checksum)
+const sign = crypto.createHash('md5').update(stringToHash).digest('hex');
+const payload = {
+user_id: USER_ID,
+api_key: API_KEY,
+action: action,
+sign: sign,
+...params
+};
+try {
+const response = await axios.post(NETICON_URL, payload);
+return response.data;
+} catch (error) {
+return { status: false, message: error.message };
+}
+}
+Contoh Panggilan Modul Operasional (Simulasi Perintah Bot):
+Salin
+// LOGIKA INTERVENSI KOMANDO TEKS: !belipulsa 0812345678 S10
+let noHpTujuan = "0812345678";
+let kodeProduk = "S10"; // Mengacu ke SKU Pulsa 10 Ribu
+let kodeNotaUnik = "BOT-TRX-" + Date.now();
+// Memanggil Eksekusi Pemotongan API Transaksional
+let orderan = await tembakNeticon("order", {
+target: noHpTujuan,
+kode_produk: kodeProduk,
+ref_id: kodeNotaUnik
+// callback_url: "Membutuhkan setup Server Panel pendukung eksternal."
+});
+if(orderan.status === true) {
+reply("Aplikasi perintah berhasil ditransmisikan. Pemesanan Anda sedang dikerjakan server, tunggu sejenak.");
+} else {
+reply("Verifikasi gagal, operasi pemesanan dibatalkan: " + orderan.message);
+}
+Konsultasi Teknis & Setup Bot
+Apakah sistem Anda memerlukan bantuan khusus dalam memfasilitasi integrasi kode pada tahap production server?
+Tim IT Engineer Neticon Pay siap membantu merancang simulasi pair-programming langsung melalui sesi obrolan untuk menjamin peluncuran sistem Anda berjalan lancar.
+Hubungi IT Engineer
+Reset API Key?
+Key yang lama akan hangus seketika. Sistem Anda (Web/Bot) yang menggunakan key lama akan terputus.
+Batal
+Ya, Reset

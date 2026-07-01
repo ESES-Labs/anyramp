@@ -1,0 +1,92 @@
+UangX - Bayar Jadi Gampang
+Keunggulan
+Untuk Developer
+Legalitas
+Dokumentasi API
+Masuk Dashboard
+Mulai Gratis
+Server Sistem Berjalan Normal
+Terima Semua Pembayaran Tanpa Ribet
+untuk Bisnis Anda.
+Terima pembayaran dari QRIS, E-Wallet, dan Virtual Account seketika. Sistem otomatisasi penuh tanpa biaya aktivasi, didesain untuk mempercepat skala bisnis Anda.
+Integrasikan Sekarang
+Keamanan SHA-256
+Notifikasi Instan
+Saldo Akun
+ID: UX-1049
+Rp 45.250.000
+INV-99283
+Pelanggan Anda
++ Rp 250.000
+LUNAS
+Webhook Berhasil!
+Sistem otomatis merilis pesanan.
+Terhubung dengan Pembayaran di Seluruh Indonesia
+Skala Enterprise
+Teknologi yang Bisa Anda Andalkan
+Kami mengelola transaksi dengan tingkat keberhasilan tinggi. Bisnis Anda aman bertumbuh bersama infrastruktur kami.
+Keamanan SHA-256
+Setiap transaksi API dilindungi oleh Enkripsi Tanda Tangan Digital SHA-256. Mencegah secara mutlak peretasan dan manipulasi status pembayaran (Anti-Spoofing).
+Webhook Real-Time
+Tinggalkan cara lama mengecek mutasi manual. Server kami akan menembakkan instruksi JSON langsung ke website Anda segera setelah pelanggan mentransfer dana.
+Proteksi 2FA & PIN
+Uang yang ada di Dashboard Anda adalah milik Anda sepenuhnya. Kami menjaganya dengan lapisan Email OTP 6-Digit dan PIN keamanan untuk setiap pencairan dana.
+Integrasi Bot Telegram
+Pantau bisnis dari genggaman. Terima notifikasi detail mengenai uang masuk, data pembeli, dan status pesanan langsung ke chat Telegram Anda secara instan.
+Pencairan Kapan Saja
+Arus kas adalah urat nadi bisnis. Tidak seperti yang lain yang menahan dana H+2, di UangX Anda dapat mencairkan saldo Anda secara instan kapan pun Anda butuhkan.
+QRIS Dinamis
+Pelanggan tidak perlu repot mengetik nominal. Sistem men-generate QR Code yang telah berisi harga pasti, membuat pembayaran lebih cepat dan bebas dari salah transfer.
+Developer Friendly
+Integrasi Cepat Tanpa Pusing.
+Kami menyediakan Template SDK Plug & Play berupa Class PHP lengkap. Anda tidak perlu menyusun algoritma enkripsi keamanan dari nol. Cukup tempel kodenya, dan sistem Anda terhubung hari ini juga.
+Dokumentasi API Super Interaktif
+Fitur Simulator/Sandbox (Uji Coba)
+Pengecekan IP Whitelist Otomatis
+Baca Dokumentasi API
+// 1. Panggil Plugin PHP UangX
+require 'UangX_Payment.php'
+;
+$uangx = new UangX_Payment("M-55821"
+, "API_SECRET_KEY"
+);
+// 2. Buat Transaksi Secara Otomatis
+$order_id = "INV-"
+. time();
+$nominal = 150000;
+$pembeli = "Budi Santoso"
+;
+$transaksi
+= $uangx->createInvoice($order_id, $nominal, $pembeli);
+if($transaksi
+['success']) {
+&nbsp;&nbsp;&nbsp;&nbsp;// 3. Arahkan pembeli ke halaman bayar UangX
+&nbsp;&nbsp;&nbsp;&nbsp;header("Location: "
+. $transaksi
+['data']['payment_url']);
+}
+Legalitas Terjamin
+Terdaftar & Diawasi Secara Resmi
+Sistem UangX dioperasikan langsung oleh badan hukum PT Neticon Pay Indonesia yang telah mengantongi izin operasional resmi dari Negara Republik Indonesia. Kami tunduk pada regulasi ketat demi memastikan keamanan transaksi dan privasi data Anda terjamin sepenuhnya.
+Badan Hukum Resmi
+Terdaftar di OSS (Kemenves)
+Sistem PSE Komdigi
+Tingkatkan Konversi Penjualan Anda.
+Tinggalkan metode verifikasi transfer manual yang membuang waktu. Bergabunglah bersama ribuan pengusaha sukses yang telah mempercayakan infrastruktur transaksi digital mereka kepada UangX hari ini.
+Daftar & Integrasi Sekarang
+UangX adalah infrastruktur Payment Gateway kelas Enterprise untuk UMKM dan Bisnis Digital di Indonesia. Terima pembayaran, otomatisasi transaksi, dan kembangkan skala bisnis Anda tanpa batas.
+Layanan
+Dashboard Merchant
+Pendaftaran Baru
+Sistem Pencairan
+Developer
+Dokumentasi API
+Sandbox Simulator
+Pengaturan Webhook
+Standar Keamanan
+Terdaftar Resmi Komdigi & OSS
+Enkripsi Data SHA-256 API
+Two-Factor Authentication (2FA)
+&copy; 2026 PT Net Icon Pay Indonesia. All Rights Reserved.
+Syarat & Ketentuan
+Kebijakan Privasi
