@@ -359,6 +359,18 @@ Kredensial: slug `anyramp` (project user, mode Sandbox aktif). Full loop LULUS �
 - **TEMUAN: field `is_sandbox: true`** di response transactiondetail (tak terdokumentasi!). Hardening produksi nanti: kontrak/prover wajib menolak proof dengan `"is_sandbox":true` (tambah ke responseMatches + cek context). Untuk demo hackathon justru dipakai.
 - Sisa jalur ZK: tinggal `RECLAIM_APP_ID`/`APP_SECRET` → `/orders/:id/prove` menghasilkan proof asli → verifikasi on-chain.
 
+### 11.11 🎉 PROOF zkTLS ASLI BERHASIL (2026-07-02) — `spikes/pakasir-proof.json`
+Reclaim app "Anyramp" (`0x6cb6Ae0b...C8cbb`, zkFetch ON). Transaksi sandbox Pakasir asli (ZKP-1782946317542, Rp120.000, simulated paid) → zkFetch → proof:
+- `extractedParameters` = `{amount:"120000", is_sandbox:"true", order_id:"ZKP-...", project:"anyramp", status:"completed"}` — persis semua field yang diparse kontrak. ✅
+- Verifikasi lokal (matematika sama dengan kontrak): **IDENTIFIER MATCH ✅**, **witness ter-recover = attestor resmi `0x2448...9072`** ✅ → proof ini akan lolos verifier Soroban ter-deploy.
+- **Kendala + solusi**: attestor ter-deploy membatasi redaksi URL ≤ **24 char** (probe empiris; count = char tersembunyi + 10). api_key 32 char tak bisa disembunyikan penuh (POST/header ditolak Pakasir). Solusi: **partial redaction** — 18 char kepala publik + **14 char ekor rahasia** (~83 bit, aman dari brute force online). URL di claim: `api_key=...{{apiKeyTail}}`. Leak check: tail TIDAK bocor di proof. TEE mode kena limit sama; mode zk (stwo) dipakai (witness cocok dengan verifier ter-deploy).
+- `backend/src/zkprover.ts` sudah disinkronkan (tail 14 + capture `is_sandbox`).
+- Sisa jalur penuh: deploy escrow ke testnet → submit proof via `fulfill_with_proof` → USDC cair.
+
+### 11.12 Repo & tooling (2026-07-02)
+- Repo private: **github.com/rifuki/anyramp** (main). Struktur: `contracts/ backend/ docs/ spikes/`. Secrets hanya di `backend/.env` + `docs/SECRETS.local.md` (keduanya gitignored).
+- Skill Reclaim terpasang di `.claude/skills/reclaim-protocol/` (untuk integrasi SDK verifikasi/frontend nanti; aktif di sesi Claude berikutnya).
+
 ### 11.9 WD (pencairan) Neticon My Qris — tanpa KYC, tapi ada catatan
 Dari TNC yang tertanam di app `qris.neticonpay.my.id` (diverifikasi 2026-07-02):
 - **Tidak ada KYC/KTP** — registrasi cuma verifikasi email. Pencairan tidak menyebut syarat identitas.
