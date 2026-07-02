@@ -35,7 +35,7 @@ export async function generateProof(orderId: string, amount: number): Promise<Re
     });
     let out = '';
     let err = '';
-    const timer = setTimeout(() => child.kill('SIGKILL'), 300_000);
+    const timer = setTimeout(() => child.kill('SIGKILL'), 600_000);
     child.stdout.on('data', (d) => (out += d));
     child.stderr.on('data', (d) => (err += d));
     child.on('error', (e) => {
