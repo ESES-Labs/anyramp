@@ -40,6 +40,10 @@ struct Ctx<'a> {
 }
 
 fn setup(verifier_ok: bool) -> Ctx<'static> {
+    setup_cfg(verifier_ok, true)
+}
+
+fn setup_cfg(verifier_ok: bool, allow_sandbox: bool) -> Ctx<'static> {
     let env = Env::default();
     env.mock_all_auths();
 
@@ -62,7 +66,7 @@ fn setup(verifier_ok: bool) -> Ctx<'static> {
 
     let id = env.register(AnyRampEscrow, ());
     let client = AnyRampEscrowClient::new(&env, &id);
-    client.initialize(&admin, &usdc_addr, &verifier);
+    client.initialize(&admin, &usdc_addr, &verifier, &allow_sandbox);
 
     // fund seller
     usdc_admin.mint(&seller, &1_000);
@@ -246,4 +250,45 @@ fn rejects_wrong_provider_host() {
         &oid(&c.env, b"0xowner"), &1_700_000_000, &1, &sig(&c.env), &0,
     );
     assert_eq!(res, Err(Ok(Error::WrongProvider)));
+}
+
+// A Pakasir-shaped context that also carries the undocumented is_sandbox flag.
+fn context_sandbox(env: &Env, is_sandbox: &[u8]) -> Bytes {
+    let mut b = Bytes::from_slice(env, b"{\"extractedParameters\":{\"status\":\"completed\",\"amount\":\"150000\",\"order_id\":\"INV1\",\"project\":\"myproj\",\"is_sandbox\":\"");
+    b.append(&Bytes::from_slice(env, is_sandbox));
+    b.append(&Bytes::from_slice(env, b"\"}}"));
+    b
+}
+
+#[test]
+fn rejects_sandbox_proof_in_production() {
+    let c = setup_cfg(true, false); // allow_sandbox = false (production)
+    let order_id = oid(&c.env, b"INV1");
+    let project = oid(&c.env, b"myproj");
+    c.client.create_order(&c.seller, &order_id, &project, &100, &100_000, &9_999_999_999);
+
+    let ctx = context_sandbox(&c.env, b"true");
+    let res = c.client.try_fulfill_with_proof(
+        &c.buyer, &order_id, &oid(&c.env, b"http"), &params_with_host(&c.env), &ctx,
+        &oid(&c.env, b"0xowner"), &1_700_000_000, &1, &sig(&c.env), &0,
+    );
+    assert_eq!(res, Err(Ok(Error::SandboxNotAllowed)));
+    // USDC stays locked
+    assert_eq!(c.usdc.balance(&c.client.address), 100);
+}
+
+#[test]
+fn allows_sandbox_proof_when_enabled() {
+    let c = setup_cfg(true, true); // allow_sandbox = true (dev/testnet)
+    let order_id = oid(&c.env, b"INV1");
+    let project = oid(&c.env, b"myproj");
+    c.client.create_order(&c.seller, &order_id, &project, &100, &100_000, &9_999_999_999);
+
+    let ctx = context_sandbox(&c.env, b"true");
+    c.client.fulfill_with_proof(
+        &c.buyer, &order_id, &oid(&c.env, b"http"), &params_with_host(&c.env), &ctx,
+        &oid(&c.env, b"0xowner"), &1_700_000_000, &1, &sig(&c.env), &0,
+    );
+    assert_eq!(c.usdc.balance(&c.buyer), 100);
+    assert_eq!(c.client.get_order(&order_id).unwrap().status, OrderStatus::Fulfilled);
 }

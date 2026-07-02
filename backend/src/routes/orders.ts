@@ -4,7 +4,16 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import * as store from '../services/orders.service.ts';
 import * as pakasir from '../services/pakasir.ts';
-import { generateProof, proofToContractArgs } from '../services/zkprover.ts';
+import * as stellar from '../services/stellar.ts';
+import { generateProof, proofToContractArgs, type ReclaimProofLike } from '../services/zkprover.ts';
+import { env } from '../config/env.ts';
+
+async function requireProof(id: string) {
+  const order = await store.getOrder(id);
+  if (!order) throw new HTTPException(404, { message: 'not found' });
+  if (!order.proof) throw new HTTPException(409, { message: 'no proof yet — call /prove first' });
+  return { order, proof: order.proof as unknown as ReclaimProofLike };
+}
 
 const createSchema = z.object({
   orderId: z.string().min(1),
@@ -78,3 +87,37 @@ function serializeArgs(args: ReturnType<typeof proofToContractArgs>) {
     Object.entries(args).map(([k, v]) => [k, Buffer.isBuffer(v) ? v.toString('hex') : v]),
   );
 }
+
+// --- On-chain settlement ---
+
+// Demo helper: seller (server key) locks USDC on-chain for this order.
+orders.post('/:id/lock', async (c) => {
+  const order = await store.getOrder(c.req.param('id'));
+  if (!order) throw new HTTPException(404, { message: 'not found' });
+  const res = await stellar.createOrderOnChain(order, env.PAKASIR_PROJECT);
+  return c.json(res);
+});
+
+// Trustless path: return the prepared, unsigned tx XDR for the buyer to sign in Freighter.
+orders.post('/:id/settle', zValidator('json', z.object({ buyerAddress: z.string().min(1) })), async (c) => {
+  const { order, proof } = await requireProof(c.req.param('id'));
+  const xdr = await stellar.buildFulfillXdr(c.req.valid('json').buyerAddress, order, proof);
+  return c.json({ xdr, networkPassphrase: env.NETWORK_PASSPHRASE });
+});
+
+// Buyer submits the Freighter-signed XDR back; we relay it and mark fulfilled.
+orders.post('/:id/submit', zValidator('json', z.object({ signedXdr: z.string().min(1) })), async (c) => {
+  const order = await store.getOrder(c.req.param('id'));
+  if (!order) throw new HTTPException(404, { message: 'not found' });
+  const hash = await stellar.submitSignedXdr(c.req.valid('json').signedXdr);
+  const updated = await store.updateOrder(order.orderId, { status: 'fulfilled' });
+  return c.json({ hash, order: updated });
+});
+
+// Demo path: submit with the server key acting as the buyer.
+orders.post('/:id/settle/auto', async (c) => {
+  const { order, proof } = await requireProof(c.req.param('id'));
+  const { hash, buyer } = await stellar.autoSubmitFulfill(order, proof);
+  const updated = await store.updateOrder(order.orderId, { status: 'fulfilled' });
+  return c.json({ hash, buyer, order: updated });
+});

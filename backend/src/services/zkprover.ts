@@ -22,37 +22,19 @@ export async function generateProof(orderId: string, amount: number): Promise<Re
   if (!env.RECLAIM_APP_ID || !env.RECLAIM_APP_SECRET) {
     throw new Error('RECLAIM_APP_ID / RECLAIM_APP_SECRET not set — register at dev.reclaimprotocol.org');
   }
-  const { ReclaimClient } = await import('@reclaimprotocol/zk-fetch');
-  const client = new ReclaimClient(env.RECLAIM_APP_ID, env.RECLAIM_APP_SECRET);
-
-  // The deployed attestor caps redacted chars in the URL at 24 (probed 2026-07-02),
-  // so the full 32-char api_key can't be hidden. We hide only the last 14 chars
-  // (~83 bits stay secret) via secret paramValues; the proof and the on-chain
-  // `parameters` blob then contain `api_key=<head>{{apiKeyTail}}`.
-  const TAIL = 14;
-  const keyHead = env.PAKASIR_API_KEY.slice(0, -TAIL);
-  const keyTail = env.PAKASIR_API_KEY.slice(-TAIL);
-  const url =
-    `${env.PAKASIR_BASE_URL}/api/transactiondetail` +
-    `?project=${env.PAKASIR_PROJECT}&amount=${amount}&order_id=${orderId}&api_key=${keyHead}{{apiKeyTail}}`;
-
-  const proof = await client.zkFetch(
-    url,
-    { method: 'GET' },
-    {
-      paramValues: { apiKeyTail: keyTail },
-      responseMatches: [
-        {
-          type: 'regex',
-          value:
-            '"amount":(?<amount>[\\d]+),"order_id":"(?<order_id>[^"]+)","project":"(?<project>[^"]+)","status":"(?<status>[^"]+)"',
-        },
-        // Production hardening: the contract must reject proofs where is_sandbox=true.
-        { type: 'regex', value: '"is_sandbox":(?<is_sandbox>true|false)' },
-      ],
-    },
-  );
-  return proof as ReclaimProofLike;
+  // @reclaimprotocol/zk-fetch resolves cleanly under Node but not Bun, so run the
+  // proving in a Node subprocess (scripts/prove.mjs). The proven partial-redaction
+  // pattern lives there; keep the two in sync.
+  const { spawnSync } = await import('node:child_process');
+  const res = spawnSync('node', ['scripts/prove.mjs', orderId, String(amount)], {
+    env: process.env,
+    encoding: 'utf8',
+    maxBuffer: 32 * 1024 * 1024,
+  });
+  if (res.status !== 0) {
+    throw new Error(`prove subprocess failed: ${res.stderr || res.error?.message || 'unknown'}`);
+  }
+  return JSON.parse(res.stdout) as ReclaimProofLike;
 }
 
 /** Split a Reclaim 65-byte signature into the (64-byte sig, recovery_id) pair the contract wants. */

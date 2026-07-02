@@ -33,6 +33,7 @@ pub enum Error {
     ProjectMismatch = 10,
     WrongProvider = 11,
     NotExpired = 12,
+    SandboxNotAllowed = 13,
 }
 
 #[contracttype]
@@ -49,6 +50,9 @@ pub struct Config {
     pub admin: Address,
     pub usdc: Address,
     pub verifier: Address,
+    // Allow proofs carrying `is_sandbox:true` (dev/testnet). MUST be false in production
+    // so a free simulated payment can never release real USDC.
+    pub allow_sandbox: bool,
 }
 
 #[contracttype]
@@ -93,14 +97,20 @@ pub struct AnyRampEscrow;
 #[contractimpl]
 impl AnyRampEscrow {
     /// One-time setup. `verifier` = deployed Reclaim verifier contract.
-    pub fn initialize(env: Env, admin: Address, usdc: Address, verifier: Address) -> Result<(), Error> {
+    pub fn initialize(
+        env: Env,
+        admin: Address,
+        usdc: Address,
+        verifier: Address,
+        allow_sandbox: bool,
+    ) -> Result<(), Error> {
         if env.storage().instance().has(&CONFIG) {
             return Err(Error::AlreadyInitialized);
         }
         admin.require_auth();
         env.storage()
             .instance()
-            .set(&CONFIG, &Config { admin, usdc, verifier });
+            .set(&CONFIG, &Config { admin, usdc, verifier, allow_sandbox });
         Ok(())
     }
 
@@ -196,6 +206,14 @@ impl AnyRampEscrow {
         }
         if parse::find_bytes(&parameters, &Bytes::from_slice(&env, PAKASIR_HOST)).is_none() {
             return Err(Error::WrongProvider);
+        }
+        // Reject simulated (sandbox) payments unless explicitly allowed (dev/testnet).
+        if !cfg.allow_sandbox {
+            if let Some(s) = parse::extract_param(&env, &context, b"is_sandbox") {
+                if parse::bytes_eq(&s, b"true") {
+                    return Err(Error::SandboxNotAllowed);
+                }
+            }
         }
 
         // 5. Release USDC to the buyer. Order status flip prevents double-spend.

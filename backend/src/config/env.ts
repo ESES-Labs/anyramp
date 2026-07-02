@@ -18,6 +18,9 @@ const schema = z.object({
 
   ESCROW_CONTRACT_ID: z.string().default(''),
   SOROBAN_RPC_URL: z.string().url().default('https://soroban-testnet.stellar.org'),
+  NETWORK_PASSPHRASE: z.string().default('Test SDF Network ; September 2015'),
+  // Optional server key for the demo auto-submit path (buyer == submitter).
+  SUBMITTER_SECRET: z.string().default(''),
 
   MOCK_PORT: z.coerce.number().int().positive().default(4990),
   WEBHOOK_URL: z.string().url().default('http://localhost:4000/webhook/pakasir'),
