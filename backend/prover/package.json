@@ -1,0 +1,11 @@
+{
+  "name": "anyramp-prover",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Isolated Reclaim zkFetch prover (npm + Node 20). Kept separate from the Bun backend because @reclaimprotocol needs npm to build its github: deps.",
+  "dependencies": {
+    "@reclaimprotocol/zk-fetch": "^1.0.0",
+    "ws": "^8.21.0"
+  }
+}

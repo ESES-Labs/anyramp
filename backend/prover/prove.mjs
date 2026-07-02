@@ -1,10 +1,10 @@
-// Standalone Reclaim zkFetch prover, run as a Node subprocess by src/services/zkprover.ts.
-// (The @reclaimprotocol/zk-fetch CJS bundle resolves cleanly under Node but not Bun.)
-// Usage: node scripts/prove.mjs <orderId> <amount>   — prints the proof JSON to stdout.
-//
-// NOTE: @reclaimprotocol/attestor-core calls `crypto.randomBytes`, which is not present
-// on the global WebCrypto under Node >= 21. Run this under Node 20 LTS (e.g. `nvm use 20`).
-// The on-chain settle path (/lock, /settle, /settle/auto) is Node-version independent.
+// Isolated Reclaim zkFetch prover — run with Node 20 from this directory so the
+// @reclaimprotocol native/github deps resolve correctly.
+// Usage: node prove.mjs <orderId> <amount>   — prints the proof JSON to stdout.
+import WebSocket from 'ws';
+// Node 20 has no global WebSocket (added in Node 22); attestor-core needs it.
+globalThis.WebSocket ??= WebSocket;
+
 import { ReclaimClient } from '@reclaimprotocol/zk-fetch';
 
 const [, , orderId, amountStr] = process.argv;
@@ -18,8 +18,7 @@ if (!RECLAIM_APP_ID || !RECLAIM_APP_SECRET) {
 
 const client = new ReclaimClient(RECLAIM_APP_ID, RECLAIM_APP_SECRET);
 
-// Partial redaction: hide the last 14 chars of the api_key (~83 bits) — the deployed
-// attestor caps URL redaction at 24 chars, so the full key cannot be hidden.
+// Partial redaction: hide the last 14 chars of the api_key (~83 bits).
 const TAIL = 14;
 const keyHead = PAKASIR_API_KEY.slice(0, -TAIL);
 const keyTail = PAKASIR_API_KEY.slice(-TAIL);

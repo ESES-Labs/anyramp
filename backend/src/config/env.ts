@@ -21,6 +21,8 @@ const schema = z.object({
   NETWORK_PASSPHRASE: z.string().default('Test SDF Network ; September 2015'),
   // Optional server key for the demo auto-submit path (buyer == submitter).
   SUBMITTER_SECRET: z.string().default(''),
+  // Node binary used to run the isolated Reclaim prover (needs Node 20). '' => 'node'.
+  PROVE_NODE_BIN: z.string().default(''),
 
   MOCK_PORT: z.coerce.number().int().positive().default(4990),
   WEBHOOK_URL: z.string().url().default('http://localhost:4000/webhook/pakasir'),

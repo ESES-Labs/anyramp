@@ -22,19 +22,36 @@ export async function generateProof(orderId: string, amount: number): Promise<Re
   if (!env.RECLAIM_APP_ID || !env.RECLAIM_APP_SECRET) {
     throw new Error('RECLAIM_APP_ID / RECLAIM_APP_SECRET not set — register at dev.reclaimprotocol.org');
   }
-  // @reclaimprotocol/zk-fetch resolves cleanly under Node but not Bun, so run the
-  // proving in a Node subprocess (scripts/prove.mjs). The proven partial-redaction
-  // pattern lives there; keep the two in sync.
-  const { spawnSync } = await import('node:child_process');
-  const res = spawnSync('node', ['scripts/prove.mjs', orderId, String(amount)], {
-    env: process.env,
-    encoding: 'utf8',
-    maxBuffer: 32 * 1024 * 1024,
+  // @reclaimprotocol/zk-fetch needs npm-built deps + Node 20 (crypto.randomBytes,
+  // WebSocket), so proving runs in an isolated package under prover/ via a real Node
+  // binary (PROVE_NODE_BIN). zkTLS proving takes ~1-3 min; use async spawn so the
+  // Bun event loop is never blocked. The redaction pattern lives in prover/prove.mjs.
+  const { spawn } = await import('node:child_process');
+  const node = env.PROVE_NODE_BIN || 'node';
+  return await new Promise<ReclaimProofLike>((resolve, reject) => {
+    const child = spawn(node, ['prove.mjs', orderId, String(amount)], {
+      cwd: 'prover',
+      env: process.env,
+    });
+    let out = '';
+    let err = '';
+    const timer = setTimeout(() => child.kill('SIGKILL'), 300_000);
+    child.stdout.on('data', (d) => (out += d));
+    child.stderr.on('data', (d) => (err += d));
+    child.on('error', (e) => {
+      clearTimeout(timer);
+      reject(e);
+    });
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      if (code !== 0) return reject(new Error(`prove failed: ${err.slice(-500) || 'exit ' + code}`));
+      try {
+        resolve(JSON.parse(out) as ReclaimProofLike);
+      } catch {
+        reject(new Error(`prove: bad JSON output`));
+      }
+    });
   });
-  if (res.status !== 0) {
-    throw new Error(`prove subprocess failed: ${res.stderr || res.error?.message || 'unknown'}`);
-  }
-  return JSON.parse(res.stdout) as ReclaimProofLike;
 }
 
 /** Split a Reclaim 65-byte signature into the (64-byte sig, recovery_id) pair the contract wants. */
