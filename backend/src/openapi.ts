@@ -128,11 +128,22 @@ export const openApiDoc = {
     '/orders/{id}/prove': {
       post: {
         tags: ['settlement'],
-        summary: 'Generate zkTLS proof (Reclaim)',
+        summary: 'Start zkTLS proof (async, ~1-3 min) — poll GET /orders/{id} until proved',
         parameters: [idParam],
         responses: {
-          200: jsonResp('proof + contract args', { type: 'object' }),
+          202: jsonResp('proving started', { type: 'object' }),
           404: jsonResp('not found', { $ref: '#/components/schemas/Error' }),
+        },
+      },
+    },
+    '/orders/{id}/proof-args': {
+      get: {
+        tags: ['settlement'],
+        summary: 'Contract args (hex) for a proved order',
+        parameters: [idParam],
+        responses: {
+          200: jsonResp('contract args', { type: 'object' }),
+          409: jsonResp('no proof yet', { $ref: '#/components/schemas/Error' }),
         },
       },
     },

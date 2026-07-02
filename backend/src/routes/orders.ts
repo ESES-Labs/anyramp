@@ -7,6 +7,7 @@ import * as pakasir from '../services/pakasir.ts';
 import * as stellar from '../services/stellar.ts';
 import { generateProof, proofToContractArgs, type ReclaimProofLike } from '../services/zkprover.ts';
 import { env } from '../config/env.ts';
+import { logger } from '../lib/logger.ts';
 
 async function requireProof(id: string) {
   const order = await store.getOrder(id);
@@ -67,19 +68,26 @@ orders.post('/:id/simulate', async (c) => {
   return c.json(await pakasir.simulatePayment(order.orderId, order.amountIdr));
 });
 
-// Generate the zkTLS proof and return the ready-to-sign contract args.
+// Kick off zkTLS proof generation (takes ~1-3 min) in the background and return
+// immediately; the client polls GET /orders/:id until status becomes 'proved'.
 orders.post('/:id/prove', async (c) => {
   const order = await store.getOrder(c.req.param('id'));
   if (!order) throw new HTTPException(404, { message: 'not found' });
-  try {
-    await store.updateOrder(order.orderId, { status: 'proving' });
-    const proof = await generateProof(order.orderId, order.amountIdr);
-    const updated = await store.updateOrder(order.orderId, { status: 'proved', proof });
-    return c.json({ order: updated, contractArgs: serializeArgs(proofToContractArgs(proof)) });
-  } catch (e) {
-    await store.updateOrder(order.orderId, { status: 'paid_detected' });
-    throw e;
-  }
+  await store.updateOrder(order.orderId, { status: 'proving' });
+  void generateProof(order.orderId, order.amountIdr)
+    .then((proof) => store.updateOrder(order.orderId, { status: 'proved', proof }))
+    .then(() => logger.info({ orderId: order.orderId }, 'proof ready'))
+    .catch(async (e) => {
+      logger.error({ orderId: order.orderId, err: (e as Error).message }, 'prove failed');
+      await store.updateOrder(order.orderId, { status: 'paid_detected' });
+    });
+  return c.json({ status: 'proving', message: 'poll GET /orders/:id until status=proved' }, 202);
+});
+
+// Return the ready-to-sign contract args for a proved order.
+orders.get('/:id/proof-args', async (c) => {
+  const { proof } = await requireProof(c.req.param('id'));
+  return c.json({ contractArgs: serializeArgs(proofToContractArgs(proof)) });
 });
 
 function serializeArgs(args: ReturnType<typeof proofToContractArgs>) {
