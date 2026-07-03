@@ -27,3 +27,7 @@ build/
 *.log
 .vscode/
 .idea/
+
+# workspace members use the root lockfile; no per-app lockfiles/bun config
+apps/*/bun.lock
+apps/*/bunfig.toml
