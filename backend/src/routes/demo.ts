@@ -5,6 +5,7 @@
 import { Hono } from 'hono';
 import { readFileSync } from 'node:fs';
 import * as stellar from '../services/stellar.ts';
+import * as store from '../services/orders.service.ts';
 import type { ReclaimProofLike } from '../services/zkprover.ts';
 import { logger } from '../lib/logger.ts';
 
@@ -52,6 +53,7 @@ async function refill() {
 refill();
 
 demo.post('/settle', async (c) => {
+  const body = await c.req.json().catch(() => ({}) as { forOrderId?: string });
   let escrow = ready.shift();
   if (!escrow) {
     // pool empty (cold start) — provision on demand, slower but reliable
@@ -60,5 +62,12 @@ demo.post('/settle', async (c) => {
   }
   const hash = await stellar.fulfillOn(escrow, { orderId: DEMO.orderId }, proof, false);
   void refill(); // top the pool back up in the background
+
+  // Record the settlement against the buyer's order so History reflects it.
+  if (body.forOrderId) {
+    await store
+      .updateOrder(body.forOrderId, { status: 'fulfilled', txHash: hash })
+      .catch(() => {});
+  }
   return c.json({ orderId: DEMO.orderId, hash, escrow });
 });

@@ -22,6 +22,7 @@ export const orders = pgTable('orders', {
   expiredAt: text('expired_at'),
   status: orderStatus('status').notNull().default('created'),
   proof: jsonb('proof'),
+  txHash: text('tx_hash'), // Stellar settlement tx once fulfilled
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
