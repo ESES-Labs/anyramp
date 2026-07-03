@@ -32,9 +32,11 @@ function HomePage() {
         total={totalUsdc}
         settledCount={fulfilled.length}
         address={address ? wallet.shorten(address) : null}
+        connected={Boolean(address)}
+        onConnect={() => void wallet.connectExternalWallet()}
       />
       {active && <ActiveOrderCard order={active} />}
-      <AssetsSection totalUsdc={totalUsdc} />
+      {address && <AssetsSection totalUsdc={totalUsdc} />}
     </>
   );
 }
@@ -43,30 +45,48 @@ function BalanceSection({
   total,
   settledCount,
   address,
+  connected,
+  onConnect,
 }: {
   total: number;
   settledCount: number;
   address: string | null;
+  connected: boolean;
+  onConnect: () => void;
 }) {
   const [dollars, cents] = total.toFixed(2).split(".");
   return (
     <section className="px-5 pb-6 pt-4">
-      <div className="space-y-1">
-        <span className="text-sm font-medium text-muted-foreground">
-          On-ramped via AnyRamp {address ? <span className="text-foreground/70">· {address}</span> : null}
-        </span>
-        <div className="flex items-baseline gap-2">
-          <h1 className="text-4xl font-medium tracking-tight">
-            ${Number(dollars).toLocaleString("en-US")}
-            <span className="text-muted-foreground">.{cents}</span>
-          </h1>
-          <span className="text-sm font-medium text-accent">USDC</span>
+      {connected ? (
+        <div className="space-y-1">
+          <span className="text-sm font-medium text-muted-foreground">
+            Wallet balance <span className="text-foreground/70">· {address}</span>
+          </span>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-4xl font-medium tracking-tight">
+              ${Number(dollars).toLocaleString("en-US")}
+              <span className="text-muted-foreground">.{cents}</span>
+            </h1>
+            <span className="text-sm font-medium text-accent">USDC</span>
+          </div>
+          <p className="pt-1 text-xs text-muted-foreground">
+            {settledCount} settlement{settledCount === 1 ? "" : "s"} verified on Stellar by ZK
+          </p>
         </div>
-        <p className="pt-1 text-xs text-muted-foreground">
-          {settledCount} settlement{settledCount === 1 ? "" : "s"} verified on Stellar by ZK
-          {address ? null : " · connect a wallet in Settings"}
-        </p>
-      </div>
+      ) : (
+        <button
+          onClick={onConnect}
+          className="w-full rounded-3xl bg-surface p-5 text-left shadow-quiet ring-1 ring-black/5 transition-transform active:scale-[0.99]"
+        >
+          <p className="text-sm font-medium">No wallet connected</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Connect a Stellar wallet to see your balance and receive USDC.
+          </p>
+          <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground">
+            Connect wallet
+          </span>
+        </button>
+      )}
 
       <div className="mt-5 flex gap-2">
         <Link
