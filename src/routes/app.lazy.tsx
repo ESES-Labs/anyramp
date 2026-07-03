@@ -3,6 +3,7 @@ import { createLazyFileRoute, Link } from "@tanstack/react-router";
 import { UsdcIcon } from "@/components/usdc-icon";
 import { api, type BackendOrder } from "@/lib/api";
 import { useWallet } from "@/components/wallet/wallet-provider";
+import { useConnectModal } from "@/components/wallet/connect-modal";
 
 export const Route = createLazyFileRoute("/app")({
   component: HomePage,
@@ -13,18 +14,25 @@ const usdc = (stroops: string) => Number(stroops) / 1e7;
 function HomePage() {
   const [orders, setOrders] = useState<BackendOrder[]>([]);
   const wallet = useWallet();
+  const { open: openConnect } = useConnectModal();
   const address = wallet.embeddedAddress ?? wallet.destination?.address ?? null;
 
   useEffect(() => {
+    if (!address) {
+      setOrders([]);
+      return;
+    }
     const load = () => api.listOrders().then(setOrders).catch(() => {});
     load();
     const t = setInterval(load, 5000); // keep the home live
     return () => clearInterval(t);
-  }, []);
+  }, [address]);
 
-  const fulfilled = orders.filter((o) => o.status === "fulfilled");
+  // Only this wallet's orders.
+  const mine = orders.filter((o) => o.buyerAddress === address);
+  const fulfilled = mine.filter((o) => o.status === "fulfilled");
   const totalUsdc = fulfilled.reduce((s, o) => s + usdc(o.usdcAmount), 0);
-  const active = orders.find((o) => !["fulfilled", "expired"].includes(o.status));
+  const active = mine.find((o) => !["fulfilled", "expired"].includes(o.status));
 
   return (
     <>
@@ -33,9 +41,9 @@ function HomePage() {
         settledCount={fulfilled.length}
         address={address ? wallet.shorten(address) : null}
         connected={Boolean(address)}
-        onConnect={() => void wallet.connectExternalWallet()}
+        onConnect={openConnect}
       />
-      {active && <ActiveOrderCard order={active} />}
+      {address && active && <ActiveOrderCard order={active} />}
       {address && <AssetsSection totalUsdc={totalUsdc} />}
     </>
   );
