@@ -1,0 +1,80 @@
+# AnyRamp API stack — deploy to a VPS / Dokploy / any docker host.
+# Frontend deploys separately (Vercel/Cloudflare).
+# Run from this folder so paths + env resolve:
+#   cd deploy && cp .env.example .env && docker compose up -d --build
+# (build contexts are relative to this file: '..' = repo root.)
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-anyramp}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB:-anyramp}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-anyramp}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  attestor:
+    build:
+      context: ../apps/attestor
+    restart: unless-stopped
+    environment:
+      # Witness signing key — must match the address registered on the verifier (add_epoch).
+      PRIVATE_KEY: ${ATTESTOR_PRIVATE_KEY:?set ATTESTOR_PRIVATE_KEY}
+      PORT: "8001"
+      DISABLE_BGP_CHECKS: "1"
+      HTTP_MAX_REDACTIONS_IN_PATH: "64"
+    expose:
+      - "8001"
+
+  backend:
+    build:
+      context: ..
+      dockerfile: apps/backend/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      attestor:
+        condition: service_started
+    # `default` → reach postgres/attestor; `dokploy-network` → be reachable by Traefik
+    # (required for Dokploy Domains / HTTPS). On a plain `docker compose up` the external
+    # network is absent — create it once with `docker network create dokploy-network`.
+    networks:
+      - default
+      - dokploy-network
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      CORS_ORIGIN: ${CORS_ORIGIN:?set CORS_ORIGIN}
+      DATABASE_URL: postgres://${POSTGRES_USER:-anyramp}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-anyramp}
+      # Backend reaches the attestor over the internal compose network (no TLS needed here).
+      ATTESTOR_WS: ws://attestor:8001/ws
+      PAKASIR_BASE_URL: ${PAKASIR_BASE_URL:-https://app.pakasir.com}
+      PAKASIR_PROJECT: ${PAKASIR_PROJECT}
+      PAKASIR_API_KEY: ${PAKASIR_API_KEY}
+      RECLAIM_APP_ID: ${RECLAIM_APP_ID}
+      RECLAIM_APP_SECRET: ${RECLAIM_APP_SECRET}
+      SUBMITTER_SECRET: ${SUBMITTER_SECRET}
+      ESCROW_CONTRACT_ID: ${ESCROW_CONTRACT_ID}
+      USDC_CONTRACT_ID: ${USDC_CONTRACT_ID:-CCPJ56XM7KNWKJEGEGE3YZA55RSB7GF2DOT47DA2NTBJLYZBNMJD6XCL}
+      RECLAIM_VERIFIER_ID: ${RECLAIM_VERIFIER_ID:-CAHEWTDHSWRJOBUD2FZ4UDGVF7PFW53W6RZ2G3O57DONSKWKXIYSZGGQ}
+      SOROBAN_RPC_URL: ${SOROBAN_RPC_URL:-https://soroban-testnet.stellar.org}
+      NETWORK_PASSPHRASE: ${NETWORK_PASSPHRASE:-Test SDF Network ; September 2015}
+    ports:
+      - "4000:4000"
+
+volumes:
+  pgdata:
+
+networks:
+  # Traefik's shared network (created by Dokploy). `external: true` = don't create it here.
+  # On a bare host without Dokploy: `docker network create dokploy-network` first.
+  dokploy-network:
+    external: true

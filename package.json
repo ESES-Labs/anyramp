@@ -2,8 +2,8 @@
   "name": "anyramp-workspace",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "backend",
-    "frontend"
+    "apps/backend",
+    "apps/frontend",
+    "packages/*"
   ]
 }

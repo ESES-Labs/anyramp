@@ -2,73 +2,77 @@
 
 **Pay in Rupiah. Get USDC. No trust required.**
 
-Fiat (IDR) → USDC on-ramp on Stellar Soroban. A buyer pays a seller via QRIS
-([Pakasir](https://pakasir.com)), then submits a **zkTLS proof** ([Reclaim
-Protocol](https://reclaimprotocol.org)) of that payment to an escrow contract,
-which verifies the proof **on-chain** and releases the seller's locked USDC —
-no backend trust, no PII on-chain.
-
-## Status (2026-07-02)
-
-| Component | Status |
-|---|---|
-| `contracts/escrow` — P2P escrow + on-chain Reclaim digest reconstruction | ✅ 15/15 tests, WASM builds |
-| `backend` — Hono + Bun + Postgres + Swagger | ✅ live-tested vs real Pakasir sandbox |
-| Real zkTLS proof over a real sandbox payment | ✅ `spikes/pakasir-proof.json` (identifier + witness verified) |
-| **Testnet deploy + on-chain fulfill** | ✅ escrow live, real proof settled (see `docs/DEPLOYMENT.md`) |
-| Backend auto-submit + Freighter buyer submit | ✅ both paths |
-| `frontend` — React + Freighter | ✅ |
-| Live zkFetch prover | ✅ isolated npm/Node 20 package (`backend/prover/`) |
+Fiat (IDR) → USDC on-ramp on Stellar Soroban. A buyer pays via QRIS
+([Pakasir](https://pakasir.com)); a self-hosted [Reclaim](https://reclaimprotocol.org)
+attestor produces a **zkTLS proof** of that payment; the escrow contract verifies the proof
+**on-chain** and releases USDC to the buyer's wallet — no backend trust, no PII on-chain.
 
 ## Layout
 
 ```
-contracts/escrow/  Soroban escrow (initialize, create_order, fulfill_with_proof, refund)
-backend/           Hono+Bun+Postgres+Drizzle+Zod+pino; Swagger at /; on-chain submit
-backend/prover/    Isolated Reclaim zkFetch prover (npm + Node 20)
-frontend/          Vite+React+TS demo UI with Freighter
-docs/              plan.md (research log), DEPLOYMENT.md (testnet addresses)
-spikes/            PoC scripts + real proof artifacts
+apps/
+  frontend/    TanStack Start (React) — Vercel/Cloudflare
+  backend/     Hono + Bun + Postgres + Drizzle; Swagger at /; on-chain submit + prover
+  attestor/    Dockerfile only — builds the self-hosted Reclaim attestor
+packages/
+  sdk/               @anyramp/sdk — typed escrow client + proof mapping
+  escrow-bindings/   generated contract bindings
+contracts/     Rust Soroban escrow (initialize, create_order, fulfill_with_proof, refund)
+deploy/        docker-compose.yml + .env.example (backend + attestor + postgres)
 ```
+
+`apps/` = deployables · `packages/` = shared libs · `contracts/` = Rust · `deploy/` = infra.
 
 ## Quick start
 
-```bash
-# 1. Backend (API docs at http://localhost:4000)
-cd backend
-cp .env.example .env               # set PAKASIR_*, RECLAIM_*, ESCROW_CONTRACT_ID, SUBMITTER_SECRET
-docker compose up -d               # Postgres on :5433
-bun install && bun run db:migrate
-(cd prover && npm install)         # Reclaim prover deps (needs Node 20)
-bun run dev
+**Whole API stack (Postgres + attestor + backend) via Docker:**
 
-# 2. Frontend (http://localhost:5173)
-cd ../frontend
-cp .env.example .env
-bun install && bun run dev
+```bash
+cd deploy && cp .env.example .env   # fill secrets — never commit .env
+docker compose up -d --build        # backend on :4000 (Swagger at /)
 ```
 
-Contract build/test: `cd contracts && stellar contract build && cargo test`.
+**Or run the pieces for local dev:**
+
+```bash
+bun install                                    # workspace (run at repo root)
+
+# backend — :4000
+cd apps/backend && cp .env.example .env        # set PAKASIR_*, RECLAIM_*, ESCROW_CONTRACT_ID, SUBMITTER_SECRET, ATTESTOR_WS
+bun run db:migrate
+(cd prover && npm install)                     # isolated Reclaim prover (needs Node 20)
+bun run dev
+
+# frontend — :8080
+cd apps/frontend && cp .env.example .env
+bun run dev
+
+# self-hosted attestor — :8001
+docker build -t anyramp-attestor apps/attestor
+docker run -d --name anyramp-attestor -e PRIVATE_KEY=<witness-key> -p 8001:8001 anyramp-attestor
+```
+
+Contract build/test: `cargo test` and `stellar contract build` in `contracts/`.
 
 ## The flow
 
-1. `POST /orders` — seller registers an order, Pakasir issues a QRIS.
-2. `POST /orders/:id/lock` — seller locks USDC into the escrow on-chain.
-3. Buyer pays the QRIS (`/orders/:id/simulate` in sandbox).
-4. `POST /orders/:id/prove` — Reclaim zkTLS proof over Pakasir `transactiondetail`
-   (api_key partially redacted; buyer PII never present).
-5. Buyer claims: `/orders/:id/settle` → **sign in Freighter** → `/orders/:id/submit`
-   (or `/settle/auto` for a server-signed demo). Escrow verifies the proof on-chain
-   and releases USDC.
+1. `POST /orders` — issue a real QRIS via Pakasir; seller locks USDC on-chain (`/lock`).
+2. Buyer pays the QRIS. The frontend polls `/orders/:id/settle-real`.
+3. Payment confirmed via `transactiondetail` → the self-hosted attestor generates a zkTLS
+   proof (~2s) → order becomes `proved`. (A server-side worker does this too, so settlement
+   never depends on a browser tab.)
+4. Buyer claims: a one-time USDC trustline + `/orders/:id/settle` → **sign in Freighter** →
+   `/orders/:id/submit`. The escrow verifies the proof on-chain and releases USDC to the
+   buyer's own wallet (or `/settle/auto` server-signed as a fallback).
 
-## Security design (short version)
+## Security design (short)
 
-The deployed Reclaim verifier on Stellar only checks a witness signature over a
-digest that the *caller* supplies. So the escrow contract itself recomputes
-`identifier = keccak256(provider \n parameters \n context)` and the
-eth-signed-message digest from the raw claim parts before trusting any extracted
-value — binding `status/amount/order_id/project` to the witness signature. It also
-rejects `is_sandbox:true` proofs unless `allow_sandbox` is set (dev/testnet only).
-See `contracts/escrow/src/reclaim.rs` and `docs/plan.md` §8.3.
+The Reclaim verifier only checks a witness signature over a digest the *caller* supplies, so
+the escrow itself recomputes `identifier = keccak256(provider \n parameters \n context)` and
+the eth-signed-message digest from the raw claim parts before trusting any extracted value —
+binding `status/amount/order_id/project` to the witness signature. It rejects `is_sandbox:true`
+proofs unless `allow_sandbox` is set (dev/testnet only). See `contracts/escrow/src/reclaim.rs`.
 
-Secrets: real keys live only in `backend/.env` (gitignored).
+The self-hosted attestor's witness is registered on the verifier via `add_epoch`; the api_key
+is fully redacted inside the proof. Secrets live only in `.env` files (gitignored) — set them
+in your host/Dokploy env panel (see `deploy/.env.example`).

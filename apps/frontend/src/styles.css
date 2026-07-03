@@ -1,0 +1,258 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+@import "@fontsource-variable/geist/wght.css";
+
+@custom-variant dark (&:is(.dark *));
+
+/*
+ * Anyramp design system.
+ * Soft, light, fintech-quiet. Geist + General Sans body, Inter Tight display.
+ * Accent: emerald (trust, verified). Surface: warm zinc.
+ */
+
+@theme inline {
+  --font-sans: "Geist Variable", "General Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Inter Tight", ui-sans-serif, system-ui, sans-serif;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-ring-offset-background: var(--background);
+
+  --shadow-quiet: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.04);
+  --shadow-lift: 0 10px 30px -12px rgba(15, 23, 42, 0.18);
+}
+
+:root {
+  --radius: 0.875rem;
+
+  /* Warm light neutrals */
+  --background: oklch(0.985 0.003 95);
+  --foreground: oklch(0.21 0.03 260);
+
+  --surface: oklch(1 0 0);
+  --surface-muted: oklch(0.97 0.003 260);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.21 0.03 260);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.21 0.03 260);
+
+  /* Primary = deep slate (zinc-900-ish) */
+  --primary: oklch(0.22 0.025 260);
+  --primary-foreground: oklch(0.985 0.003 95);
+
+  --secondary: oklch(0.96 0.005 260);
+  --secondary-foreground: oklch(0.22 0.025 260);
+
+  --muted: oklch(0.96 0.005 260);
+  --muted-foreground: oklch(0.55 0.02 260);
+
+  /* Accent = trust emerald */
+  --accent: oklch(0.66 0.13 160);
+  --accent-foreground: oklch(0.985 0.003 95);
+  --accent-soft: oklch(0.95 0.04 160);
+
+  --destructive: oklch(0.6 0.18 25);
+  --destructive-foreground: oklch(0.985 0.003 95);
+
+  --border: oklch(0.92 0.005 260);
+  --input: oklch(0.92 0.005 260);
+  --ring: oklch(0.66 0.13 160);
+}
+
+.dark {
+  --background: oklch(0.16 0.02 260);
+  --foreground: oklch(0.97 0.003 95);
+  --surface: oklch(0.22 0.025 260);
+  --surface-muted: oklch(0.26 0.025 260);
+  --card: oklch(0.22 0.025 260);
+  --card-foreground: oklch(0.97 0.003 95);
+  --popover: oklch(0.22 0.025 260);
+  --popover-foreground: oklch(0.97 0.003 95);
+  --primary: oklch(0.97 0.003 95);
+  --primary-foreground: oklch(0.22 0.025 260);
+  --secondary: oklch(0.28 0.02 260);
+  --secondary-foreground: oklch(0.97 0.003 95);
+  --muted: oklch(0.28 0.02 260);
+  --muted-foreground: oklch(0.7 0.02 260);
+  --accent: oklch(0.7 0.13 160);
+  --accent-foreground: oklch(0.16 0.02 260);
+  --accent-soft: oklch(0.32 0.05 160);
+  --destructive: oklch(0.65 0.18 25);
+  --destructive-foreground: oklch(0.97 0.003 95);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.7 0.13 160);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: oklch(0.3 0.08 160);
+  }
+}
+
+@property --beam-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes border-beam-spin {
+  to { --beam-angle: 360deg; }
+}
+
+.border-beam {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    transparent 0deg,
+    transparent 280deg,
+    rgba(255, 255, 255, 0.95) 320deg,
+    rgba(255, 255, 255, 0.4) 340deg,
+    transparent 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-beam-spin 2.6s linear infinite;
+  pointer-events: none;
+}
+
+.border-beam-lime {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--beam-angle),
+    rgba(200, 245, 66, 0.35) 0deg,
+    rgba(200, 245, 66, 0.35) 300deg,
+    #c8f542 318deg,
+    rgba(255, 255, 255, 0.75) 328deg,
+    #c8f542 338deg,
+    rgba(200, 245, 66, 0.35) 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-beam-spin 2.4s linear infinite;
+  pointer-events: none;
+  z-index: 2;
+  transition: opacity 0.25s ease;
+}
+
+.group:hover .border-beam-lime {
+  opacity: 0;
+}
+
+/* Fallback for browsers without @property — static subtle ring */
+@supports not (background: conic-gradient(from var(--beam-angle), red, red)) {
+  .border-beam { animation: none; background: transparent; }
+  .border-beam-lime { animation: none; background: transparent; }
+}
+
+@keyframes marquee-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-100%); }
+}
+.group:hover [style*="marquee-scroll"] { animation-play-state: paused; }
+
+@keyframes beam-dash {
+  to { stroke-dashoffset: -660; }
+}
+
+@keyframes pulse-ring {
+  0%   { transform: scale(0.9); opacity: 0.55; }
+  80%  { transform: scale(1.9); opacity: 0; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+
+@keyframes sheet-slide-up {
+  from { transform: translate3d(0, 100%, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+.sheet-panel {
+  animation: sheet-slide-up 0.22s cubic-bezier(0.32, 0.72, 0, 1) both;
+  contain: layout style paint;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheet-panel {
+    animation: none;
+  }
+
+  .border-beam,
+  .border-beam-lime {
+    animation: none;
+  }
+}
+
+.bg-soft-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--color-foreground) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--color-foreground) 6%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+}
+
+/* Tailwind v4 drops the default button cursor — restore it for interactive elements. */
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  summary,
+  label:has(input:not(:disabled)) {
+    cursor: pointer;
+  }
+}
+

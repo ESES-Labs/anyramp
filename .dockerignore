@@ -1,0 +1,17 @@
+# Never send these into any build context
+**/node_modules
+**/.git
+target
+**/.output
+**/.vinxi
+**/.tanstack
+**/dist
+**/build
+**/.env
+**/.env.*
+!**/.env.example
+**/*.local.md
+**/*.bak
+**/*.bak.*
+**/.DS_Store
+**/*.log
