@@ -10,6 +10,7 @@ import { health } from './routes/health.ts';
 import { orders } from './routes/orders.ts';
 import { wallet } from './routes/wallet.ts';
 import { webhook } from './routes/webhook.ts';
+import { pools as poolsRoute } from './routes/pools.ts';
 
 export const app = new Hono();
 
@@ -33,6 +34,7 @@ app.route('/health', health);
 app.route('/orders', orders);
 app.route('/wallet', wallet);
 app.route('/webhook', webhook);
+app.route('/pools', poolsRoute);
 
 app.notFound(notFound);
 app.onError(onError);

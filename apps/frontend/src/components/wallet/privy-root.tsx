@@ -16,12 +16,9 @@ export function PrivyRoot({ children }: { children: ReactNode }) {
     <PrivyProvider
       appId={PRIVY_APP_ID}
       config={{
-        // Passkey stays enabled via `loginMethods` + `passkeys` below; it isn't an orderable
-        // method, so `loginMethodsAndOrder` only lists email.
-        loginMethods: ["passkey", "email"],
-        loginMethodsAndOrder: {
-          primary: ["email"],
-        },
+        // Email is the supported signup path. Passkey can be linked after login if enabled
+        // in the Privy dashboard (signup-with-passkey is often disabled).
+        loginMethods: ["email"],
         appearance: {
           theme: "light",
           accentColor: "#1a1f2e",
@@ -29,11 +26,8 @@ export function PrivyRoot({ children }: { children: ReactNode }) {
         },
         embeddedWallets: {
           showWalletUIs: false,
-        },
-        passkeys: {
-          registration: {
-            hints: ["client-device"],
-          },
+          ethereum: { createOnLogin: "off" },
+          solana: { createOnLogin: "off" },
         },
       }}
     >

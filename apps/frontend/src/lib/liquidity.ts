@@ -1,4 +1,8 @@
 import { CURRENCY_RATES, formatFiat, type CurrencyCode } from "@/lib/currencies";
+import {
+  DEFAULT_ONRAMP_GATEWAYS,
+  type PaymentGatewayId,
+} from "@/lib/payment-gateways";
 
 export type PoolType = "onramp" | "topup";
 export type LiquidityAsset = "USDC" | "XLM";
@@ -10,7 +14,7 @@ export type LiquidityPosition = {
   deposited: number;
   rateMarkupBps: number;
   maxOrderFiat: number;
-  paymentMethod: string;
+  paymentGateways: PaymentGatewayId[];
   apy: number;
   earnedFiat: number;
   createdAt: string;
@@ -27,7 +31,7 @@ const DEMO_POSITIONS: LiquidityPosition[] = [
     deposited: 4200,
     rateMarkupBps: 25,
     maxOrderFiat: 1_000_000,
-    paymentMethod: "QRIS",
+    paymentGateways: ["gopay-merchant", "dana-bisnis", "pakasir"],
     apy: 8.2,
     earnedFiat: 128_400,
     createdAt: "2026-06-01T08:00:00.000Z",
@@ -39,7 +43,7 @@ const DEMO_POSITIONS: LiquidityPosition[] = [
     deposited: 12_500,
     rateMarkupBps: 0,
     maxOrderFiat: 500_000,
-    paymentMethod: "Crypto transfer",
+    paymentGateways: [],
     apy: 6.4,
     earnedFiat: 42_100,
     createdAt: "2026-06-10T14:30:00.000Z",
@@ -67,6 +71,23 @@ export const VOLUME_CAP_OPTIONS = [500_000, 1_000_000, 2_500_000, 5_000_000] as 
 let cachedSnapshot: LiquidityPosition[] = DEMO_POSITIONS;
 let cachedStorageRaw: string | null | undefined;
 
+type StoredLiquidityPosition = Omit<LiquidityPosition, "paymentGateways"> & {
+  paymentGateways?: PaymentGatewayId[];
+  paymentMethod?: string;
+};
+
+function normalizePosition(raw: StoredLiquidityPosition): LiquidityPosition {
+  if (Array.isArray(raw.paymentGateways)) {
+    const { paymentMethod: _legacy, ...position } = raw;
+    return position as LiquidityPosition;
+  }
+
+  const { paymentMethod: _legacy, ...position } = raw;
+  const paymentGateways = position.pool === "onramp" ? DEFAULT_ONRAMP_GATEWAYS : [];
+
+  return { ...position, paymentGateways };
+}
+
 function loadSnapshot(): LiquidityPosition[] {
   if (typeof window === "undefined") return DEMO_POSITIONS;
 
@@ -80,8 +101,10 @@ function loadSnapshot(): LiquidityPosition[] {
   }
 
   try {
-    const parsed = JSON.parse(raw) as LiquidityPosition[];
-    cachedSnapshot = parsed.length ? parsed : DEMO_POSITIONS;
+    const parsed = JSON.parse(raw) as StoredLiquidityPosition[];
+    cachedSnapshot = parsed.length
+      ? parsed.map(normalizePosition)
+      : DEMO_POSITIONS;
   } catch {
     cachedSnapshot = DEMO_POSITIONS;
   }

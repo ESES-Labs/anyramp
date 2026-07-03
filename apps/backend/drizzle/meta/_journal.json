@@ -15,6 +15,13 @@
       "when": 1783043422070,
       "tag": "0001_moaning_hellion",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1783093596621,
+      "tag": "0002_conscious_whizzer",
+      "breakpoints": true
     }
   ]
 }

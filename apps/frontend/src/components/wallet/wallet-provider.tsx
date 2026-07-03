@@ -14,8 +14,10 @@ import {
   createLocalWalletWithPasskey,
   getLocalWalletSession,
   signInWithPasskey,
+  signXdrWithLocalWallet,
 } from "@/lib/local-wallet";
 import { isValidStellarAddress, shortenAddress } from "@/lib/stellar-address";
+import { waitForPrivyApi } from "@/lib/wait-for-privy";
 import { isPrivyEnabled, PrivyRoot } from "./privy-root";
 import { PrivyWalletBridge, type PrivyWalletApi } from "./privy-wallet-bridge";
 
@@ -47,6 +49,7 @@ type WalletContextValue = {
   isValidAddress: (address: string) => boolean;
   embeddedAddress: string | null;
   embeddedEmail: string | null;
+  signEmbeddedXdr: (unsignedXdr: string, address: string) => Promise<string>;
 };
 
 const WalletContext = createContext<WalletContextValue | null>(null);
@@ -90,6 +93,24 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     };
   }, [syncLocalEmbedded]);
 
+  useEffect(() => {
+    if (!isPrivyEnabled()) return;
+    const api = privyRef.current;
+    if (!api?.authenticated || !api.getAddress()) return;
+
+    setDestination((current) => {
+      if (current?.mode === "external" || current?.mode === "manual") return current;
+      const address = api.getAddress();
+      if (!address) return current;
+      return {
+        address,
+        mode: "embedded",
+        label: "Privy wallet",
+        email: api.email,
+      };
+    });
+  }, [privyVersion]);
+
   const privyEmbedded = useMemo(() => {
     if (!isPrivyEnabled() || !privyRef.current?.authenticated) return null;
     const address = privyRef.current.getAddress();
@@ -127,6 +148,20 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     });
   }, [setDestinationSafe]);
 
+  const signEmbeddedXdr = useCallback(async (unsignedXdr: string, address: string) => {
+    if (isPrivyEnabled()) {
+      try {
+        const api = await waitForPrivyApi(() => privyRef.current);
+        if (api.authenticated && api.getAddress() === address) {
+          return api.signStellarXdr(unsignedXdr, address);
+        }
+      } catch {
+        // fall through to local wallet signing
+      }
+    }
+    return signXdrWithLocalWallet(unsignedXdr, address);
+  }, []);
+
   const connectExternalWallet = useCallback(async () => {
     setIsConnecting(true);
     setError(null);
@@ -149,15 +184,17 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     setIsConnecting(true);
     setError(null);
     try {
-      if (isPrivyEnabled() && privyRef.current) {
-        await privyRef.current.loginWithEmail();
-        const address = await privyRef.current.ensureStellarWallet();
+      if (isPrivyEnabled()) {
+        const api = await waitForPrivyApi(() => privyRef.current);
+        await api.loginWithEmail();
+        bumpPrivy();
+        const address = await api.ensureStellarWallet();
         if (!address) throw new Error("Could not create embedded wallet.");
         setDestinationSafe({
           address,
           mode: "embedded",
           label: "Privy wallet",
-          email: privyRef.current.email ?? email,
+          email: api.email ?? email,
         });
         return;
       }
@@ -175,20 +212,22 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [setDestinationSafe, syncLocalEmbedded]);
+  }, [bumpPrivy, setDestinationSafe, syncLocalEmbedded]);
 
   const createEmbeddedWithPasskey = useCallback(async (email: string) => {
     setIsConnecting(true);
     setError(null);
     try {
-      if (isPrivyEnabled() && privyRef.current) {
-        await privyRef.current.createAccountWithTouchId();
-        const address = await privyRef.current.ensureStellarWallet();
+      if (isPrivyEnabled()) {
+        const api = await waitForPrivyApi(() => privyRef.current);
+        await api.createAccountWithTouchId();
+        bumpPrivy();
+        const address = await api.ensureStellarWallet();
         setDestinationSafe({
           address,
           mode: "embedded",
           label: "Privy wallet",
-          email: privyRef.current.email ?? email,
+          email: api.email ?? email,
         });
         return;
       }
@@ -206,20 +245,22 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [setDestinationSafe, syncLocalEmbedded]);
+  }, [bumpPrivy, setDestinationSafe, syncLocalEmbedded]);
 
   const signInEmbeddedWithPasskey = useCallback(async (email: string) => {
     setIsConnecting(true);
     setError(null);
     try {
-      if (isPrivyEnabled() && privyRef.current) {
-        await privyRef.current.loginWithPasskey();
-        const address = await privyRef.current.ensureStellarWallet();
+      if (isPrivyEnabled()) {
+        const api = await waitForPrivyApi(() => privyRef.current);
+        await api.loginWithPasskey();
+        bumpPrivy();
+        const address = await api.ensureStellarWallet();
         setDestinationSafe({
           address,
           mode: "embedded",
           label: "Privy wallet",
-          email: privyRef.current.email ?? email,
+          email: api.email ?? email,
         });
         return;
       }
@@ -237,77 +278,83 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
     } finally {
       setIsConnecting(false);
     }
-  }, [setDestinationSafe, syncLocalEmbedded]);
+  }, [bumpPrivy, setDestinationSafe, syncLocalEmbedded]);
 
   const openPrivyLogin = useCallback(async () => {
-    if (!isPrivyEnabled() || !privyRef.current) {
+    if (!isPrivyEnabled()) {
       throw new Error("Privy is not configured.");
     }
     setIsConnecting(true);
     setError(null);
     try {
-      await privyRef.current.loginWithEmail();
-      const address = await privyRef.current.ensureStellarWallet();
+      const api = await waitForPrivyApi(() => privyRef.current);
+      await api.loginWithEmail();
+      bumpPrivy();
+      const address = await api.ensureStellarWallet();
       setDestinationSafe({
         address,
         mode: "embedded",
         label: "Privy wallet",
-        email: privyRef.current.email,
+        email: api.email,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Sign-in failed.");
     } finally {
       setIsConnecting(false);
     }
-  }, [setDestinationSafe]);
+  }, [bumpPrivy, setDestinationSafe]);
 
   const signupWithTouchId = useCallback(async () => {
-    if (!isPrivyEnabled() || !privyRef.current) {
+    if (!isPrivyEnabled()) {
       throw new Error("Privy is not configured.");
     }
     setIsConnecting(true);
     setError(null);
     try {
-      await privyRef.current.createAccountWithTouchId();
-      const address = await privyRef.current.ensureStellarWallet();
+      const api = await waitForPrivyApi(() => privyRef.current);
+      await api.createAccountWithTouchId();
+      bumpPrivy();
+      const address = await api.ensureStellarWallet();
       setDestinationSafe({
         address,
         mode: "embedded",
         label: "Privy wallet",
-        email: privyRef.current.email,
+        email: api.email,
       });
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Touch ID passkey failed. Try Safari or your HTTPS tunnel URL instead of localhost in Chrome.",
+          : "Could not create wallet. Try Continue with email instead.",
       );
     } finally {
       setIsConnecting(false);
     }
-  }, [setDestinationSafe]);
+  }, [bumpPrivy, setDestinationSafe]);
 
   const signInWithTouchId = useCallback(async () => {
-    if (!isPrivyEnabled() || !privyRef.current) {
+    if (!isPrivyEnabled()) {
       throw new Error("Privy is not configured.");
     }
     setIsConnecting(true);
     setError(null);
     try {
-      await privyRef.current.loginWithPasskey();
-      const address = await privyRef.current.ensureStellarWallet();
+      const api = await waitForPrivyApi(() => privyRef.current);
+      await api.loginWithPasskey();
+      bumpPrivy();
+      const address = await api.ensureStellarWallet();
       setDestinationSafe({
         address,
         mode: "embedded",
         label: "Privy wallet",
-        email: privyRef.current.email,
+        email: api.email,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Passkey sign-in failed.");
     } finally {
       setIsConnecting(false);
     }
-  }, [setDestinationSafe]);
+  }, [bumpPrivy, setDestinationSafe]);
 
   const clearDestination = useCallback(() => {
     setDestinationSafe(null);
@@ -344,6 +391,7 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
       isValidAddress: isValidStellarAddress,
       embeddedAddress,
       embeddedEmail,
+      signEmbeddedXdr,
     }),
     [
       destination,
@@ -361,6 +409,7 @@ function WalletProviderInner({ children }: { children: ReactNode }) {
       disconnectAll,
       embeddedAddress,
       embeddedEmail,
+      signEmbeddedXdr,
     ],
   );
 
@@ -390,6 +439,8 @@ export function useWallet() {
 
 const noopAsync = async () => {};
 
+const noopSign = async () => "";
+
 const SSR_WALLET_STUB: WalletContextValue = {
   destination: null,
   privyEnabled: false,
@@ -409,6 +460,7 @@ const SSR_WALLET_STUB: WalletContextValue = {
   isValidAddress: isValidStellarAddress,
   embeddedAddress: null,
   embeddedEmail: null,
+  signEmbeddedXdr: noopSign,
 };
 
 export function ClientWalletProvider({ children }: { children: ReactNode }) {

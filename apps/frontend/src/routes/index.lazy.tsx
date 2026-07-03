@@ -21,6 +21,7 @@ import { StellarIcon } from "@/components/stellar-icon";
 import { UsdcIcon } from "@/components/usdc-icon";
 import { ZkExplainer } from "@/components/zk-explainer";
 import { DemoWidget } from "@/components/demo-widget";
+import { AppHomePreview, PREVIEW_SCREEN_H } from "@/components/app-home-preview";
 import { IphoneMock } from "@/components/iphone-mock";
 import { LandingNav } from "@/components/landing-nav";
 import { OutlineCtaButton } from "@/components/outline-cta-button";
@@ -180,7 +181,9 @@ function Landing() {
         </div>
 
         <div data-reveal className="relative mx-auto mt-12 w-full max-w-[360px] px-4 sm:mt-16">
-          <IphoneMock src="/app" />
+          <IphoneMock screenHeight={PREVIEW_SCREEN_H}>
+            <AppHomePreview />
+          </IphoneMock>
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 -bottom-8 h-48 bg-gradient-to-t from-black via-black/85 to-transparent"

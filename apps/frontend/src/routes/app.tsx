@@ -1,7 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { AppHomePage } from "@/components/app-home";
 
 export const Route = createFileRoute("/app")({
   loader: () => undefined,
+  component: AppHomePage,
   head: () => ({
     meta: [
       { title: "Anyramp — Trustless onramp & offramp on Stellar" },

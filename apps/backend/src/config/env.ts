@@ -1,5 +1,6 @@
 // Fail-fast, type-safe environment. Bun auto-loads .env, so we validate Bun.env
 // once at import time; any missing/invalid var crashes the process immediately.
+import { accessSync, constants } from 'node:fs';
 import { z } from 'zod';
 
 const schema = z.object({
@@ -40,6 +41,20 @@ const schema = z.object({
   SETTLEMENT_POLL_MS: z.coerce.number().int().positive().default(20_000),
 });
 
+function resolveProveNodeBin(configured: string): string {
+  const trimmed = configured.trim();
+  if (!trimmed) return 'node';
+  try {
+    accessSync(trimmed, constants.X_OK);
+    return trimmed;
+  } catch {
+    console.warn(
+      `⚠️  PROVE_NODE_BIN="${trimmed}" not found — falling back to "node" on PATH`,
+    );
+    return 'node';
+  }
+}
+
 const parsed = schema.safeParse(Bun.env);
 if (!parsed.success) {
   console.error('❌ Invalid environment:');
@@ -49,5 +64,8 @@ if (!parsed.success) {
   process.exit(1);
 }
 
-export const env = parsed.data;
+export const env = {
+  ...parsed.data,
+  PROVE_NODE_BIN: resolveProveNodeBin(parsed.data.PROVE_NODE_BIN),
+};
 export const isProd = env.NODE_ENV === 'production';

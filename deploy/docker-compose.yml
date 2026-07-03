@@ -43,12 +43,6 @@ services:
         condition: service_healthy
       attestor:
         condition: service_started
-    # `default` → reach postgres/attestor; `dokploy-network` → be reachable by Traefik
-    # (required for Dokploy Domains / HTTPS). On a plain `docker compose up` the external
-    # network is absent — create it once with `docker network create dokploy-network`.
-    networks:
-      - default
-      - dokploy-network
     environment:
       NODE_ENV: production
       PORT: "4000"
@@ -72,9 +66,3 @@ services:
 
 volumes:
   pgdata:
-
-networks:
-  # Traefik's shared network (created by Dokploy). `external: true` = don't create it here.
-  # On a bare host without Dokploy: `docker network create dokploy-network` first.
-  dokploy-network:
-    external: true

@@ -18,7 +18,15 @@ import {
   WALLET_BALANCES,
   type LiquidityAsset,
 } from "@/lib/liquidity";
-import { QRIS_PAYMENT } from "@/lib/payment";
+import {
+  PaymentGatewayPicker,
+  PaymentGatewayReviewRow,
+  gatewaysMissingCredentials,
+} from "@/components/payment-gateway-picker";
+import {
+  DEFAULT_ONRAMP_GATEWAYS,
+  type PaymentGatewayId,
+} from "@/lib/payment-gateways";
 
 const FIAT_CURRENCY: CurrencyCode = "IDR";
 
@@ -43,6 +51,9 @@ function AddLiquidityPage() {
   const [amount, setAmount] = useState(isOnramp ? "1000" : "10000");
   const [markupBps, setMarkupBps] = useState(25);
   const [maxOrderFiat, setMaxOrderFiat] = useState<number>(1_000_000);
+  const [selectedGateways, setSelectedGateways] = useState<PaymentGatewayId[]>(
+    DEFAULT_ONRAMP_GATEWAYS,
+  );
   const [stage, setStage] = useState<Stage>("idle");
   const [positionId, setPositionId] = useState("");
   const [, startTransition] = useTransition();
@@ -53,6 +64,7 @@ function AddLiquidityPage() {
     setAmount(isOnramp ? "1000" : "10000");
     setMarkupBps(isOnramp ? 25 : 0);
     setMaxOrderFiat(isOnramp ? 1_000_000 : 500_000);
+    setSelectedGateways(isOnramp ? DEFAULT_ONRAMP_GATEWAYS : []);
   }, [isOnramp]);
 
   useEffect(() => {
@@ -72,7 +84,7 @@ function AddLiquidityPage() {
           deposited: numericAmount,
           rateMarkupBps: markupBps,
           maxOrderFiat,
-          paymentMethod: isOnramp ? QRIS_PAYMENT.label : "Crypto transfer",
+          paymentGateways: isOnramp ? selectedGateways : [],
           apy: isOnramp ? ONRAMP_APY : TOPUP_APY,
         });
         setPositionId(position.id);
@@ -80,10 +92,12 @@ function AddLiquidityPage() {
       }, 1800);
       return () => clearTimeout(t);
     }
-  }, [stage, pool, asset, markupBps, maxOrderFiat, isOnramp, numericAmount]);
+  }, [stage, pool, asset, markupBps, maxOrderFiat, isOnramp, numericAmount, selectedGateways]);
 
   const walletBalance = WALLET_BALANCES[asset];
   const insufficient = numericAmount > walletBalance;
+  const noGatewaysSelected = isOnramp && selectedGateways.length === 0;
+  const missingCredentials = isOnramp ? gatewaysMissingCredentials(selectedGateways) : [];
   const estimatedApy = isOnramp ? ONRAMP_APY : TOPUP_APY;
 
   const supportedFiat = useMemo(
@@ -291,26 +305,27 @@ function AddLiquidityPage() {
 
       <section className="mt-6 px-4">
         <h2 className="px-1 pb-3 text-sm font-medium text-muted-foreground">
-          {isOnramp ? "Payment method" : "Settlement"}
+          {isOnramp ? "Payment gateways" : "Settlement"}
         </h2>
         {isOnramp ? (
           <>
-            <div className="flex w-full items-center justify-between rounded-2xl bg-surface px-4 py-3 ring-1 ring-foreground">
-              <div className="flex items-center gap-3">
-                <span className="grid size-9 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-black/5">
-                  <img src={QRIS_PAYMENT.logo} alt="QRIS" className="h-6 w-auto object-contain" />
-                </span>
-                <div>
-                  <p className="text-sm font-medium">{QRIS_PAYMENT.label}</p>
-                  <p className="text-xs text-muted-foreground">{QRIS_PAYMENT.sub}</p>
-                </div>
-              </div>
-              <span className="grid size-5 place-items-center rounded-full bg-foreground ring-1 ring-foreground">
-                <span className="size-1.5 rounded-full bg-background" />
-              </span>
-            </div>
+            <PaymentGatewayPicker
+              selected={selectedGateways}
+              onChange={setSelectedGateways}
+            />
+            {noGatewaysSelected && (
+              <p className="mt-2 px-1 text-xs font-medium text-destructive">
+                Select at least one payment gateway for your onramp pool.
+              </p>
+            )}
+            {missingCredentials.length > 0 && (
+              <p className="mt-2 px-1 text-xs font-medium text-destructive">
+                Connect credentials for all selected gateways before depositing.
+              </p>
+            )}
             <p className="mt-2 px-1 text-xs text-muted-foreground">
-              Fiat settlement rail for matched onramp orders served by your liquidity.
+              Buyers can pay through any gateway you enable. You receive fiat settlement from
+              each provider you connect.
             </p>
           </>
         ) : (
@@ -338,7 +353,7 @@ function AddLiquidityPage() {
           </span>
           <p className="text-xs leading-relaxed text-foreground/80">
             {isOnramp
-              ? "Your USDC backs peer onramps. When a buyer pays via QRIS, your pool releases crypto and you earn spread + yield."
+              ? "Your USDC backs peer onramps. When a buyer pays via your enabled gateways, your pool releases crypto and you earn spread + yield."
               : "Your XLM tops up wallets instantly. Earn fees every time a user receives crypto from your pool."}
           </p>
         </div>
@@ -348,7 +363,12 @@ function AddLiquidityPage() {
         <button
           type="button"
           onClick={() => startTransition(() => setStage("review"))}
-          disabled={numericAmount <= 0 || insufficient}
+          disabled={
+            numericAmount <= 0 ||
+            insufficient ||
+            noGatewaysSelected ||
+            missingCredentials.length > 0
+          }
           className="w-full rounded-full bg-primary py-4 text-sm font-medium text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
         >
           Review deposit
@@ -371,6 +391,7 @@ function AddLiquidityPage() {
             maxOrderFiat={maxOrderFiat}
             estimatedApy={estimatedApy}
             monthlyYield={monthlyYield}
+            selectedGateways={selectedGateways}
             onConfirm={() => setStage("signing")}
           />
         )}
@@ -467,6 +488,7 @@ const ReviewDepositContent = memo(function ReviewDepositContent({
   maxOrderFiat,
   estimatedApy,
   monthlyYield,
+  selectedGateways,
   onConfirm,
 }: {
   isOnramp: boolean;
@@ -477,6 +499,7 @@ const ReviewDepositContent = memo(function ReviewDepositContent({
   maxOrderFiat: number;
   estimatedApy: number;
   monthlyYield: number;
+  selectedGateways: PaymentGatewayId[];
   onConfirm: () => void;
 }) {
   return (
@@ -488,10 +511,14 @@ const ReviewDepositContent = memo(function ReviewDepositContent({
       <Row label="Max order size" value={formatFiat(maxOrderFiat, FIAT_CURRENCY)} />
       <Row label="Est. APY" value={`${estimatedApy}%`} />
       <Row label="Est. monthly yield" value={formatFiat(monthlyYield, FIAT_CURRENCY)} />
-      <Row
-        label={isOnramp ? "Payment method" : "Settlement"}
-        value={isOnramp ? QRIS_PAYMENT.label : "Crypto transfer"}
-      />
+      {isOnramp ? (
+        <div className="flex items-start justify-between gap-4">
+          <span className="text-xs text-muted-foreground">Payment gateways</span>
+          <PaymentGatewayReviewRow ids={selectedGateways} />
+        </div>
+      ) : (
+        <Row label="Settlement" value="Crypto transfer" />
+      )}
       <Row label="Network" value="Stellar mainnet" />
       <Row label="Network fee" value="0.00001 XLM" />
       <div className="rounded-2xl bg-accent-soft/60 p-4 text-xs leading-relaxed text-foreground/80 ring-1 ring-accent/10">

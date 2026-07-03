@@ -62,20 +62,44 @@ function SettingsPage() {
               ) : null}
             </li>
           ) : (
-            <li className="px-4 py-3.5 text-sm text-muted-foreground">No wallet connected</li>
+            <li className="px-4 py-3.5 text-sm text-muted-foreground">
+              No wallet linked — paste a destination address when buying USDC.
+            </li>
           )}
           {wallet.privyEnabled ? (
-            <li>
-              <button
-                type="button"
-                disabled={wallet.isConnecting}
-                onClick={() => void wallet.openPrivyLogin()}
-                className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-opacity active:opacity-60 disabled:opacity-60"
-              >
-                <span className="text-sm">Sign in with email or passkey</span>
-                <span className="text-xs text-muted-foreground">Privy</span>
-              </button>
-            </li>
+            <>
+              <li>
+                <button
+                  type="button"
+                  disabled={wallet.isConnecting}
+                  onClick={() => void wallet.signupWithTouchId()}
+                  className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-opacity active:opacity-60 disabled:opacity-60"
+                >
+                  <span className="text-sm">Create wallet with passkey</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  disabled={wallet.isConnecting}
+                  onClick={() => void wallet.openPrivyLogin()}
+                  className="flex w-full items-center justify-between px-4 py-3.5 text-left transition-opacity active:opacity-60 disabled:opacity-60"
+                >
+                  <span className="text-sm">Sign in with email</span>
+                  <span className="text-xs text-muted-foreground">Privy</span>
+                </button>
+              </li>
+              <li>
+                <button
+                  type="button"
+                  disabled={wallet.isConnecting}
+                  onClick={() => void wallet.signInWithTouchId()}
+                  className="flex w-full px-4 pb-3.5 text-left text-xs text-muted-foreground underline disabled:opacity-60"
+                >
+                  Already have a passkey? Sign in
+                </button>
+              </li>
+            </>
           ) : (
             <>
               <li className="px-4 py-3.5">

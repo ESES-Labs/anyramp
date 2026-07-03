@@ -2,6 +2,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { createLazyFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { ArrowRight, Droplets, TrendingUp } from "lucide-react";
 import { AssetIcon } from "@/components/asset-icon";
+import { PaymentGatewayBadges } from "@/components/payment-gateway-picker";
 import { formatFiat } from "@/lib/currencies";
 import {
   formatDeposited,
@@ -132,9 +133,14 @@ function PositionRow({
         </span>
         <div>
           <p className="text-sm font-medium">{poolLabel(p.pool)}</p>
-          <p className="text-xs text-muted-foreground">
-            {formatDeposited(p.deposited, p.asset)}
-          </p>
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-muted-foreground">
+              {formatDeposited(p.deposited, p.asset)}
+            </p>
+            {p.pool === "onramp" && p.paymentGateways.length > 0 && (
+              <PaymentGatewayBadges ids={p.paymentGateways} />
+            )}
+          </div>
         </div>
       </div>
       <div className="text-right">

@@ -59,3 +59,24 @@ wallet.get('/:address/usdc', async (c) => {
     return c.json({ balance: '0', trustline: false });
   }
 });
+
+// Testnet only: fund a new embedded wallet with XLM for trustline + Soroban fees.
+wallet.post('/:address/fund', async (c) => {
+  if (!env.NETWORK_PASSPHRASE.includes('Test')) {
+    return c.json({ funded: false, message: 'Funding only available on testnet' }, 400);
+  }
+  const address = c.req.param('address');
+  try {
+    await horizon().loadAccount(address);
+    return c.json({ funded: true, alreadyFunded: true });
+  } catch {
+    const res = await fetch(
+      `https://friendbot.stellar.org?addr=${encodeURIComponent(address)}`,
+    );
+    if (!res.ok) {
+      throw new Error(`friendbot failed: ${res.status}`);
+    }
+    const body = (await res.json()) as { hash?: string };
+    return c.json({ funded: true, hash: body.hash });
+  }
+});

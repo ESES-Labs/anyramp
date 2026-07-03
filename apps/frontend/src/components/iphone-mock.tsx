@@ -11,7 +11,51 @@ type IphoneMockProps = {
   children?: ReactNode;
   className?: string;
   darkStatusBar?: boolean;
+  /** Shorter viewport for static previews (default: full iPhone height). */
+  screenHeight?: number;
 };
+
+function ScaledScreen({
+  children,
+  height = SCREEN_H,
+}: {
+  children: ReactNode;
+  height?: number;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const update = () => setScale(el.clientWidth / SCREEN_W);
+    update();
+
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <div
+      ref={containerRef}
+      className="relative w-full overflow-hidden bg-background"
+      style={{ aspectRatio: `${SCREEN_W} / ${height}` }}
+    >
+      <div
+        className="absolute left-0 top-0 origin-top-left"
+        style={{
+          width: SCREEN_W,
+          height,
+          transform: `scale(${scale})`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 function IframeScreen({ src }: { src: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -88,6 +132,7 @@ export function IphoneMock({
   children,
   className = "",
   darkStatusBar = false,
+  screenHeight = SCREEN_H,
 }: IphoneMockProps) {
   const reduceMotion = useReducedMotion();
 
@@ -142,7 +187,7 @@ export function IphoneMock({
                 decoding="async"
               />
             ) : children ? (
-              children
+              <ScaledScreen height={screenHeight}>{children}</ScaledScreen>
             ) : (
               <IframeScreen src={src} />
             )}

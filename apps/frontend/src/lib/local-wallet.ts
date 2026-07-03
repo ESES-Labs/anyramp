@@ -45,6 +45,26 @@ export function clearLocalWallet() {
   writeSession(null);
 }
 
+function readSecret(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(SECRET_KEY);
+}
+
+export function getLocalWalletSecretForAddress(address: string): string | null {
+  const session = readSession();
+  if (!session || session.publicKey !== address) return null;
+  return readSecret();
+}
+
+export async function signXdrWithLocalWallet(unsignedXdr: string, address: string) {
+  const secret = getLocalWalletSecretForAddress(address);
+  if (!secret) {
+    throw new Error("No local signing key for this wallet. Sign in again.");
+  }
+  const { signStellarXdrWithSecret } = await import("@/lib/embedded-signing");
+  return signStellarXdrWithSecret(unsignedXdr, secret);
+}
+
 export async function createLocalWalletWithEmail(email: string): Promise<LocalWalletSession> {
   const normalized = email.trim().toLowerCase();
   if (!normalized.includes("@")) {

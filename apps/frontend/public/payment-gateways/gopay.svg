@@ -1,0 +1,4 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="GoPay">
+  <rect width="64" height="64" rx="14" fill="#00AED6"/>
+  <path fill="#fff" d="M32 14c-9.9 0-18 8.1-18 18s8.1 18 18 18 18-8.1 18-18-8.1-18-18-18Zm-1.2 9.6h2.4v14.4h7.2v2.4H30.8V23.6Z"/>
+</svg>

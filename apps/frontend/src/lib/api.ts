@@ -77,6 +77,21 @@ export function provenFacts(proof: StoredProof) {
   };
 }
 
+export type BackendPool = {
+  id: string;
+  sellerAddress: string;
+  pool: "onramp" | "topup";
+  asset: "USDC" | "XLM";
+  deposited: number;
+  rateMarkupBps: number;
+  maxOrderFiat: number;
+  paymentGateways: string[];
+  apy: number;
+  earnedFiat: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export const api = {
   createOrder: (o: {
     orderId: string;
@@ -140,6 +155,22 @@ export const api = {
   /** Real on-chain USDC balance for an address. */
   usdcBalance: (address: string) =>
     req<{ balance: string; trustline: boolean }>(`/wallet/${address}/usdc`),
+
+  /** Fund a testnet account via friendbot (XLM for fees + trustline). */
+  fundTestnetAccount: (address: string) =>
+    req<{ funded: boolean; hash?: string }>(`/wallet/${address}/fund`, { method: "POST" }),
+
+  /** List all active liquidity pools. */
+  listPools: () => req<BackendPool[]>("/pools"),
+
+  /** List pools owned by a specific seller address. */
+  listMyPools: (sellerAddress: string) =>
+    req<BackendPool[]>(`/pools/mine?sellerAddress=${encodeURIComponent(sellerAddress)}`),
+
+  /** Create a new liquidity pool. */
+  createPool: (
+    o: Omit<BackendPool, "id" | "createdAt" | "updatedAt" | "earnedFiat">,
+  ) => req<BackendPool>("/pools", { method: "POST", body: JSON.stringify(o) }),
 };
 
 export const EXPLORER_TX = "https://stellar.expert/explorer/testnet/tx/";

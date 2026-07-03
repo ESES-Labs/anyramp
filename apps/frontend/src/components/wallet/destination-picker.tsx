@@ -35,7 +35,7 @@ export function DestinationPicker({
     if (isConnected && !wasConnected.current) {
       onChoiceChange("connected");
     } else if (!isConnected && wasConnected.current && choice === "connected") {
-      onChoiceChange("embedded");
+      onChoiceChange("manual");
     }
     wasConnected.current = isConnected;
   }, [connectedWallet, choice, onChoiceChange]);
@@ -59,11 +59,62 @@ export function DestinationPicker({
         <p className="mt-1 px-1 text-xs text-muted-foreground">
           {connectedWallet
             ? "We'll send it to your connected wallet, or you can use another Stellar address."
-            : "Connect an existing wallet or create one with email or passkey."}
+            : "Paste any Stellar G… address — connecting a wallet is optional."}
         </p>
       </div>
 
       <div className="space-y-2">
+        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-3 ring-1 ring-black/5">
+          <input
+            checked={choice === "manual"}
+            className="mt-1"
+            name="destination"
+            onChange={() => onChoiceChange("manual")}
+            type="radio"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-medium">
+              {connectedWallet ? "Send to another Stellar address" : "Send to Stellar address"}
+            </span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">
+              {connectedWallet
+                ? "Paste a different G… address to send there instead."
+                : "Paste the destination wallet — no sign-in required."}
+            </span>
+          </span>
+        </label>
+
+        {choice === "manual" ? (
+          <div className="ml-2 space-y-2">
+            <input
+              className="w-full rounded-2xl bg-surface px-3 py-2.5 font-mono text-sm outline-none ring-1 ring-black/10"
+              onBlur={() => {
+                if (!connectedWallet) wallet.setManualDestination(manualAddress);
+              }}
+              onChange={(event) =>
+                onManualAddressChange(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+              }
+              placeholder="G…"
+              value={manualAddress}
+            />
+            {connectedWallet ? null : (
+              <button
+                className="w-full text-xs text-muted-foreground underline disabled:opacity-60"
+                disabled={wallet.isConnecting}
+                onClick={() => void wallet.connectExternalWallet()}
+                type="button"
+              >
+                {wallet.isConnecting ? "Connecting…" : "Or connect Freighter / xBull (optional)"}
+              </button>
+            )}
+            {manualValid ? (
+              <p className="break-all text-xs text-muted-foreground">
+                Destination: {wallet.shorten(manualAddress.trim())}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
         {connectedWallet ? (
           <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-3 ring-1 ring-black/5">
             <input
@@ -97,7 +148,7 @@ export function DestinationPicker({
               <span className="min-w-0 flex-1">
                 <span className="block text-sm font-medium">Create wallet for me</span>
                 <span className="mt-0.5 block text-xs text-muted-foreground">
-                  Sign in with email or passkey — we&apos;ll generate a Stellar wallet for you.
+                  Optional — sign in with email or passkey and we&apos;ll generate a Stellar wallet.
                 </span>
               </span>
             </label>
@@ -109,18 +160,18 @@ export function DestinationPicker({
                     <button
                       className="w-full rounded-full bg-primary px-3 py-2.5 text-sm font-medium text-primary-foreground disabled:opacity-60"
                       disabled={wallet.isConnecting}
-                      onClick={() => void wallet.signupWithTouchId()}
+                      onClick={() => void wallet.openPrivyLogin()}
                       type="button"
                     >
-                      {wallet.isConnecting ? "Waiting for Touch ID…" : "Create with Touch ID passkey"}
+                      {wallet.isConnecting ? "Waiting for verification…" : "Continue with email"}
                     </button>
                     <button
                       className="w-full rounded-full bg-surface px-3 py-2.5 text-sm font-medium ring-1 ring-black/10 disabled:opacity-60"
                       disabled={wallet.isConnecting}
-                      onClick={() => void wallet.openPrivyLogin()}
+                      onClick={() => void wallet.signupWithTouchId()}
                       type="button"
                     >
-                      Continue with email
+                      Email + add passkey (optional)
                     </button>
                     <button
                       className="w-full text-xs text-muted-foreground underline disabled:opacity-60"
@@ -131,8 +182,8 @@ export function DestinationPicker({
                       Already have a passkey? Sign in
                     </button>
                     <p className="text-[11px] leading-relaxed text-muted-foreground">
-                      First time? You&apos;ll verify email once, then save Touch ID for future
-                      sign-ins. Use Safari or your HTTPS tunnel for best Touch ID support on Mac.
+                      Finish the email OTP in the Privy popup. A Stellar wallet is created after
+                      you verify.
                     </p>
                   </div>
                 ) : (
@@ -181,57 +232,6 @@ export function DestinationPicker({
             ) : null}
           </>
         )}
-
-        <label className="flex cursor-pointer items-start gap-3 rounded-2xl bg-surface p-3 ring-1 ring-black/5">
-          <input
-            checked={choice === "manual"}
-            className="mt-1"
-            name="destination"
-            onChange={() => onChoiceChange("manual")}
-            type="radio"
-          />
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-medium">
-              {connectedWallet ? "Send to another Stellar address" : "Send to Stellar address"}
-            </span>
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              {connectedWallet
-                ? "Paste a different G… address to send there instead."
-                : "Paste a G… address or connect Freighter, xBull, and other wallets."}
-            </span>
-          </span>
-        </label>
-
-        {choice === "manual" ? (
-          <div className="ml-2 space-y-2">
-            <input
-              className="w-full rounded-2xl bg-surface px-3 py-2.5 font-mono text-sm outline-none ring-1 ring-black/10"
-              onBlur={() => {
-                if (!connectedWallet) wallet.setManualDestination(manualAddress);
-              }}
-              onChange={(event) =>
-                onManualAddressChange(event.target.value.toUpperCase().replace(/[^A-Z0-9]/g, ""))
-              }
-              placeholder="G…"
-              value={manualAddress}
-            />
-            {connectedWallet ? null : (
-              <button
-                className="w-full rounded-full bg-surface px-3 py-2 text-sm font-medium ring-1 ring-black/10 disabled:opacity-60"
-                disabled={wallet.isConnecting}
-                onClick={() => void wallet.connectExternalWallet()}
-                type="button"
-              >
-                {wallet.isConnecting ? "Connecting…" : "Connect wallet"}
-              </button>
-            )}
-            {manualValid ? (
-              <p className="break-all text-xs text-muted-foreground">
-                Destination: {wallet.shorten(manualAddress.trim())}
-              </p>
-            ) : null}
-          </div>
-        ) : null}
       </div>
 
       {wallet.error ? <p className="px-1 text-xs text-destructive">{wallet.error}</p> : null}

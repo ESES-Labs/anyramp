@@ -51,9 +51,7 @@ function RampPage() {
   const wallet = useWallet();
   const [amount, setAmount] = useState("250000");
   const [stage, setStage] = useState<Stage>("idle");
-  const [destChoice, setDestChoice] = useState<DestinationChoice>(() =>
-    wallet.destination && wallet.destination.mode !== "manual" ? "connected" : "embedded",
-  );
+  const [destChoice, setDestChoice] = useState<DestinationChoice>("manual");
   const [manualAddress, setManualAddress] = useState("");
   const [order, setOrder] = useState<BackendOrder | null>(null);
   const [txHash, setTxHash] = useState<string | null>(null);
@@ -115,9 +113,8 @@ function RampPage() {
     }
   };
 
-  // Claim once the proof is ready. External wallet: add the USDC trustline (one-time) then
-  // sign the fulfill so the USDC lands in the buyer's OWN wallet. Embedded/local: the server
-  // settles (funds go to the operator escrow — the wallet can't sign).
+  // Claim once the proof is ready. External wallet: Freighter signs. Embedded (Privy/local):
+  // fund testnet account, add trustline, then sign fulfill so USDC lands in the buyer wallet.
   const claimToWallet = async () => {
     if (!order) return;
     setFlowError(null);
@@ -125,17 +122,24 @@ function RampPage() {
     try {
       let hash: string;
       if (wallet.destination?.mode === "external" && destinationAddress) {
-        // stellar-kit is browser-only — keep it out of the SSR module graph.
         const { signXdrWithExternalWallet } = await import("@/lib/stellar-kit");
-        // 1. One-time USDC trustline so the wallet can receive USDC.
         const tl = await api.trustline(destinationAddress);
         if (tl.xdr) {
           const signedTl = await signXdrWithExternalWallet(tl.xdr, destinationAddress);
           await api.submitClassic(signedTl);
         }
-        // 2. Buyer signs the fulfill → USDC transfers to their wallet.
         const { xdr } = await api.settle(order.orderId, destinationAddress);
         const signed = await signXdrWithExternalWallet(xdr, destinationAddress);
+        ({ hash } = await api.submit(order.orderId, signed));
+      } else if (destinationAddress) {
+        await api.fundTestnetAccount(destinationAddress).catch(() => {});
+        const tl = await api.trustline(destinationAddress);
+        if (tl.xdr) {
+          const signedTl = await wallet.signEmbeddedXdr(tl.xdr, destinationAddress);
+          await api.submitClassic(signedTl);
+        }
+        const { xdr } = await api.settle(order.orderId, destinationAddress);
+        const signed = await wallet.signEmbeddedXdr(xdr, destinationAddress);
         ({ hash } = await api.submit(order.orderId, signed));
       } else {
         ({ hash } = await api.settleAuto(order.orderId));
